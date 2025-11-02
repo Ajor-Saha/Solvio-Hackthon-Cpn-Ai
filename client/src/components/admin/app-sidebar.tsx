@@ -191,14 +191,14 @@ const getSidebarData = (role: string) => {
             icon: <Megaphone size={20} />,
             items: [
               {
+                title: "Showcase",
+                url: "/announcement",
+                icon: <GalleryVerticalEnd size={16} />,
+              },
+              {
                 title: "Job Posting",
                 url: "/announcement/job-posting",
                 icon: <Briefcase size={16} />,
-              },
-              {
-                title: "Add Discovery",
-                url: "/announcement/discovery",
-                icon: <Lightbulb size={16} />,
               },
               {
                 title: "Post Competition",
