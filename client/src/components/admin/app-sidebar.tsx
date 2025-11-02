@@ -23,14 +23,11 @@ import { Axios } from "@/config/axios";
 import { env } from "@/config/env";
 import useAuthStore from "@/store/store";
 import {
-  BookOpen,
   Bot,
   Briefcase,
   Calendar,
   FileText,
-  FolderKanban,
   GalleryVerticalEnd,
-  Gamepad2,
   KeyRound,
   Lightbulb,
   Megaphone,
@@ -40,7 +37,7 @@ import {
   Trophy,
   UserCog,
   UserPlus,
-  Users,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -115,36 +112,27 @@ const getSidebarData = (role: string) => {
       return {
         navMain: [
           {
-            title: "Subjects",
-            url: "/subjects",
-            icon: <BookOpen size={20} />,
-            items: [
-              {
-                title: "My Subjects",
-                url: "/subjects",
-                icon: <FolderKanban size={16} />,
-              },
-              {
-                title: "Course Materials",
-                url: "/subjects/materials",
-                icon: <FileText size={16} />,
-              },
-            ],
-          },
-          {
-            title: "Students",
-            url: "/students",
-            icon: <Users size={20} />,
-          },
-          {
-            title: "Games",
-            url: "/games",
-            icon: <Gamepad2 size={20} />,
+            title: "Semester",
+            url: "/semester",
+            icon: <Calendar size={20} />,
+            items: getSemesterItems(),
           },
           {
             title: "AI Support",
-            url: "/ai-tutor",
+            url: "/ai-support",
             icon: <Bot size={20} />,
+            items: [
+              {
+                title: "Research Assistant",
+                url: "/ai-support/research-assistant",
+                icon: <FileText size={16} />,
+              },
+              {
+                title: "Project Assistant",
+                url: "/ai-support/project-assistant",
+                icon: <Lightbulb size={16} />,
+              },
+            ],
           },
           {
             title: "Settings",
@@ -203,14 +191,14 @@ const getSidebarData = (role: string) => {
             icon: <Megaphone size={20} />,
             items: [
               {
+                title: "Showcase",
+                url: "/announcement",
+                icon: <GalleryVerticalEnd size={16} />,
+              },
+              {
                 title: "Job Posting",
                 url: "/announcement/job-posting",
                 icon: <Briefcase size={16} />,
-              },
-              {
-                title: "Add Discovery",
-                url: "/announcement/discovery",
-                icon: <Lightbulb size={16} />,
               },
               {
                 title: "Post Competition",

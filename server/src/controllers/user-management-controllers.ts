@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { parse } from 'csv-parse/sync';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { Request, Response } from 'express';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,6 +9,7 @@ import { departmentTable } from '../db/schema/tbl-department';
 import { userTable } from '../db/schema/tbl-user';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
+import { sendEmployeeDetailsEmail } from '../utils/send-user-crediential';
 
 // Add single student or faculty
 export const addUser = asyncHandler(async (req: Request, res: Response) => {
@@ -387,6 +388,183 @@ export const getDepartmentUsers = asyncHandler(
         );
     } catch (error) {
       console.error('Error getting department users:', error);
+      res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+    }
+  }
+);
+
+// Send credentials to multiple users via email
+export const sendCredentialsToUsers = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const adminUser = req.user;
+
+      // Check if user is department admin
+      if (adminUser?.role !== 'department_admin') {
+        return res
+          .status(403)
+          .json(
+            new ApiResponse(
+              403,
+              {},
+              'Only department admins can send credentials'
+            )
+          );
+      }
+
+      const { userIds } = req.body;
+
+      // Validate userIds
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(
+              400,
+              {},
+              'User IDs array is required and cannot be empty'
+            )
+          );
+      }
+
+      // Limit to 10 users per request
+      if (userIds.length > 10) {
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(
+              400,
+              {},
+              'Maximum 10 users can be processed per request'
+            )
+          );
+      }
+
+      // Fetch users from database
+      const users = await db
+        .select()
+        .from(userTable)
+        .where(inArray(userTable.userId, userIds));
+
+      if (users.length === 0) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, 'No users found with provided IDs'));
+      }
+
+      // Verify all users belong to admin's department
+      const usersNotInDepartment = users.filter(
+        user => user.departmentId !== adminUser.departmentId
+      );
+
+      if (usersNotInDepartment.length > 0) {
+        return res
+          .status(403)
+          .json(
+            new ApiResponse(
+              403,
+              {},
+              'You can only send credentials to users in your department'
+            )
+          );
+      }
+
+      // Verify all users are students or faculty
+      const invalidRoleUsers = users.filter(
+        user => !['student', 'faculty'].includes(user.role)
+      );
+
+      if (invalidRoleUsers.length > 0) {
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(
+              400,
+              {},
+              'Credentials can only be sent to students or faculty'
+            )
+          );
+      }
+
+      // Get department name
+      const [department] = await db
+        .select()
+        .from(departmentTable)
+        .where(eq(departmentTable.departmentId, adminUser.departmentId!));
+
+      const departmentName = department?.name || 'Your Institution';
+
+      const successfulEmails: any[] = [];
+      const failedEmails: any[] = [];
+
+      // Reset password and send email for each user
+      for (const user of users) {
+        try {
+          // Generate new password
+          const newPassword = `${user.firstName.toLowerCase()}${Math.floor(
+            1000 + Math.random() * 9000
+          )}`;
+          const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+          // Update user password in database
+          await db
+            .update(userTable)
+            .set({ password: hashedPassword })
+            .where(eq(userTable.userId, user.userId));
+
+          // Send email with credentials
+          const emailResult = await sendEmployeeDetailsEmail(
+            user.email,
+            user.firstName,
+            newPassword,
+            departmentName
+          );
+
+          if (emailResult.success) {
+            successfulEmails.push({
+              userId: user.userId,
+              email: user.email,
+              name: `${user.firstName} ${user.lastName || ''}`.trim(),
+              role: user.role,
+            });
+          } else {
+            failedEmails.push({
+              userId: user.userId,
+              email: user.email,
+              name: `${user.firstName} ${user.lastName || ''}`.trim(),
+              role: user.role,
+              reason: emailResult.message || 'Failed to send email',
+            });
+          }
+        } catch (error) {
+          console.error(`Error processing user ${user.userId}:`, error);
+          failedEmails.push({
+            userId: user.userId,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName || ''}`.trim(),
+            role: user.role,
+            reason: 'Error processing request',
+          });
+        }
+      }
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            summary: {
+              total: users.length,
+              successful: successfulEmails.length,
+              failed: failedEmails.length,
+            },
+            successfulEmails,
+            failedEmails,
+          },
+          `Credentials sent to ${successfulEmails.length} out of ${users.length} users`
+        )
+      );
+    } catch (error) {
+      console.error('Error sending credentials:', error);
       res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
     }
   }

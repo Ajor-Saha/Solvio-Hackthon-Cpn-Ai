@@ -80,14 +80,26 @@ export const createCourse = asyncHandler(
           )
         );
 
+      console.log('Course creation check:', {
+        targetDepartmentId,
+        courseCode: courseCode.toUpperCase(),
+        existingCourse: existingCourse.length,
+        adminUserDepartment: adminUser.departmentId
+      });
+
       if (existingCourse.length > 0) {
+        console.log('Course already exists:', existingCourse[0]);
         return res
           .status(409)
           .json(
             new ApiResponse(
               409,
-              {},
-              'Course with this code already exists in the department'
+              {
+                existingCourse: existingCourse[0],
+                attemptedCode: courseCode.toUpperCase(),
+                departmentId: targetDepartmentId
+              },
+              `Course with code "${courseCode.toUpperCase()}" already exists in the department`
             )
           );
       }
@@ -162,6 +174,194 @@ export const getAllCourses = asyncHandler(
         .json(new ApiResponse(200, courses, 'Courses retrieved successfully'));
     } catch (error) {
       console.error('Error getting courses:', error);
+      res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+    }
+  }
+);
+
+// Get all courses for current admin's department
+export const getDepartmentCourses = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const adminUser = req.user;
+
+      if (!adminUser?.departmentId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, 'User department not found'));
+      }
+
+      // Validate department exists
+      const existingDepartment = await db
+        .select()
+        .from(departmentTable)
+        .where(eq(departmentTable.departmentId, adminUser.departmentId));
+
+      if (
+        existingDepartment.length === 0 ||
+        existingDepartment[0].deletedAt !== null
+      ) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, 'Department not found'));
+      }
+
+      const courses = await db
+        .select()
+        .from(courseTable)
+        .where(
+          and(
+            eq(courseTable.departmentId, adminUser.departmentId),
+            isNull(courseTable.deletedAt)
+          )
+        );
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, courses, 'Courses retrieved successfully'));
+    } catch (error) {
+      console.error('Error getting department courses:', error);
+      res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+    }
+  }
+);
+
+// Get courses by semester (using query parameter)
+export const getCoursesBySemesterQuery = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      const { semester } = req.query;
+
+      console.log('getCoursesBySemesterQuery called with query:', req.query);
+      console.log('Semester query parameter:', semester);
+
+      if (!semester || typeof semester !== 'string') {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, 'Semester query parameter is required'));
+      }
+
+      // Validate semester format (should be like "1/1", "2/2", etc.)
+      if (!/^[1-4]\/[1-2]$/.test(semester)) {
+        console.log('Invalid semester format:', semester);
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, `Invalid semester format: "${semester}". Should be like "1/1", "2/2", etc.`));
+      }
+
+      if (!user?.departmentId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, 'User department not found'));
+      }
+
+      // Validate department exists
+      const existingDepartment = await db
+        .select()
+        .from(departmentTable)
+        .where(eq(departmentTable.departmentId, user.departmentId));
+
+      if (
+        existingDepartment.length === 0 ||
+        existingDepartment[0].deletedAt !== null
+      ) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, 'Department not found'));
+      }
+
+      const courses = await db
+        .select()
+        .from(courseTable)
+        .where(
+          and(
+            eq(courseTable.departmentId, user.departmentId),
+            eq(courseTable.semester, semester),
+            isNull(courseTable.deletedAt)
+          )
+        );
+
+      console.log(`Found ${courses.length} courses for semester ${semester} in department ${user.departmentId}`);
+      console.log('Courses found:', courses);
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, courses, `Courses for semester ${semester} retrieved successfully`));
+    } catch (error) {
+      console.error('Error getting courses by semester:', error);
+      res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+    }
+  }
+);
+
+// Get courses by semester (using path parameter) - Original version with debugging
+export const getCoursesBySemester = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      const { semester } = req.params;
+
+      console.log('getCoursesBySemester called with params:', req.params);
+      console.log('Raw semester parameter:', semester);
+
+      if (!semester) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, 'Semester parameter is required'));
+      }
+
+      // The semester should already be URL-decoded by Express
+      console.log('Decoded semester:', semester);
+
+      // Validate semester format (should be like "1/1", "2/2", etc.)
+      if (!/^[1-4]\/[1-2]$/.test(semester)) {
+        console.log('Invalid semester format:', semester);
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, `Invalid semester format: "${semester}". Should be like "1/1", "2/2", etc.`));
+      }
+
+      if (!user?.departmentId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, 'User department not found'));
+      }
+
+      // Validate department exists
+      const existingDepartment = await db
+        .select()
+        .from(departmentTable)
+        .where(eq(departmentTable.departmentId, user.departmentId));
+
+      if (
+        existingDepartment.length === 0 ||
+        existingDepartment[0].deletedAt !== null
+      ) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, 'Department not found'));
+      }
+
+      const courses = await db
+        .select()
+        .from(courseTable)
+        .where(
+          and(
+            eq(courseTable.departmentId, user.departmentId),
+            eq(courseTable.semester, semester),
+            isNull(courseTable.deletedAt)
+          )
+        );
+
+      console.log(`Found ${courses.length} courses for semester ${semester} in department ${user.departmentId}`);
+      console.log('Courses found:', courses);
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, courses, `Courses for semester ${semester} retrieved successfully`));
+    } catch (error) {
+      console.error('Error getting courses by semester:', error);
       res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
     }
   }

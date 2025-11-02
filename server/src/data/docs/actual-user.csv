@@ -1,0 +1,6 @@
+firstName,lastName,email,role
+John,Doe,john.doe@example.com,student
+Jane,Smith,jane.smith@example.com,student
+Michael,Johnson,michael.j@example.com,faculty
+Sarah,Williams,sarah.w@example.com,faculty
+David,Brown,david.brown@example.com,student
