@@ -9,6 +9,7 @@ import { BookOpen, Calendar, Plus, TrendingUp, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CourseForm } from "./_components/course-form";
 import { SubjectForm } from "./_components/subject-form";
 
 interface UserSubject {
@@ -43,6 +44,9 @@ export default function SubjectsPage() {
   const { isAuthenticated, user, accessToken } = useAuthStore();
   const router = useRouter();
 
+  // Check if user is department admin
+  const isDepartmentAdmin = user?.role === "department_admin";
+
   const handleSubjectClick = (subjectName: string) => {
     const encodedName = subjectName.toLowerCase().replace(/\s+/g, '-');
     router.push(`/subjects/${encodedName}`);
@@ -71,12 +75,19 @@ export default function SubjectsPage() {
   };
 
   useEffect(() => {
-    fetchUserSubjects();
-  }, [isAuthenticated, accessToken]);
+    if (!isDepartmentAdmin) {
+      fetchUserSubjects();
+    }
+  }, [isAuthenticated, accessToken, isDepartmentAdmin]);
 
   const handleSubjectAdded = () => {
     setShowAddForm(false);
     fetchUserSubjects(); // Refresh the list
+  };
+
+  const handleCourseAdded = () => {
+    // Just close the form for now, courses are viewed in semester pages
+    // Form will be reset automatically by the CourseForm component
   };
 
   const formatDate = (dateString: string) => {
@@ -96,9 +107,56 @@ export default function SubjectsPage() {
             Authentication Required
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
-            Please log in to view your subjects.
+            Please log in to access this page.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Render course management for department admins
+  if (isDepartmentAdmin) {
+    return (
+      <div className="flex min-h-screen w-full flex-col">
+        <main className="flex-1 p-4 sm:p-6 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header Section */}
+            <div className="mb-8">
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  Course Management
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Create new courses for your department. View courses by semester in the Semester section.
+                </p>
+              </div>
+            </div>
+
+            {/* Course Creation Form - Always Visible */}
+            <div className="mb-8">
+              <CourseForm onSuccess={handleCourseAdded} />
+            </div>
+
+            {/* Info Card */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      View Courses by Semester
+                    </h3>
+                    <p className="text-blue-700 dark:text-blue-200 text-sm">
+                      After creating courses, navigate to the <strong>Semester</strong> section in the sidebar to view and manage courses organized by semester (1/1, 1/2, 2/1, 2/2, 3/1, 3/2, 4/1, 4/2).
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     );
   }
