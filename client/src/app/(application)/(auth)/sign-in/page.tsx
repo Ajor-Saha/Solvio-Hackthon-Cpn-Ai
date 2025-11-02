@@ -85,15 +85,17 @@ export default function LoginPage() {
         `${env.BACKEND_BASE_URL}/api/auth/signin`,
         data
       );
+
+      // Store auth data in Zustand
+      const userData = response.data.data;
+      const accessToken = response.data.accessToken;
+
+      login(userData, accessToken);
+
       toast.success(response.data.message || "Login Successful");
 
-      // Store auth data immediately
-      login(response.data.data, response.data.accessToken);
-
-      // Wait a moment for auth state to update, then navigate
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 100);
+      // Navigate to dashboard after successful login
+      router.push("/dashboard");
     } catch (error) {
       console.error("Login Error:", error);
       const axiosError = error as AxiosError<{ message: string }>;

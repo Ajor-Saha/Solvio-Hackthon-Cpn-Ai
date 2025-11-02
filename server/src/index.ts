@@ -5,8 +5,11 @@ import express, { NextFunction, Request, Response } from 'express';
 import logger from 'morgan';
 
 import user_router from './routes/auth-route';
+import courseResource_router from './routes/course-resource-route';
+import course_router from './routes/course-route';
 import department_router from './routes/department-route';
 import institution_router from './routes/institution-route';
+import userManagement_router from './routes/user-management-route';
 
 dotenv.config();
 
@@ -38,6 +41,15 @@ app.use('/api/institution', institution_router);
 
 // Department routes
 app.use('/api/department', department_router);
+
+// User management routes (for department admins)
+app.use('/api/user-management', userManagement_router);
+
+// Course routes
+app.use('/api/course', course_router);
+
+// Course resource routes
+app.use('/api/course-resource', courseResource_router);
 
 // Health check route
 app.get('/', (req, res) => {

@@ -1,16 +1,15 @@
 import { create } from "zustand";
-import { persist, devtools, createJSONStorage } from "zustand/middleware";
+import { createJSONStorage, devtools, persist } from "zustand/middleware";
 
 export interface User {
   userId: string;
   firstName: string;
-  lastName: string;
+  lastName: string | null;
   email: string;
-  password: string;
   avatar: string | null;
-  verifyCode: string;
-  verifyCodeExpiry: string;
   isVerified: boolean;
+  role: string;
+  departmentId: string;
   createdAt: string;
   updatedAt: string;
 }
