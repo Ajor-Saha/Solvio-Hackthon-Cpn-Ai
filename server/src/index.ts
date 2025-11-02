@@ -9,6 +9,7 @@ import courseResource_router from './routes/course-resource-route';
 import course_router from './routes/course-route';
 import department_router from './routes/department-route';
 import institution_router from './routes/institution-route';
+import showcase_router from './routes/showcase-route';
 import userManagement_router from './routes/user-management-route';
 
 dotenv.config();
@@ -50,6 +51,9 @@ app.use('/api/course', course_router);
 
 // Course resource routes
 app.use('/api/course-resource', courseResource_router);
+
+// Department Showcases routes
+app.use('/api/showcases', showcase_router);
 
 // Health check route
 app.get('/', (req, res) => {
