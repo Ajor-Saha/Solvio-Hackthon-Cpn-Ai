@@ -5,7 +5,7 @@ import { promises as fs } from 'fs';
 import { nanoid } from 'nanoid';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
-import { courseTable } from '../db/schema/tbl-course';
+import { courseEnrollmentTable, courseTable } from '../db/schema/tbl-course';
 import { courseResourceTable } from '../db/schema/tbl-course-resource';
 import { userTable } from '../db/schema/tbl-user';
 import { ApiResponse } from '../utils/api-response';
@@ -38,11 +38,26 @@ export const uploadCourseResource = asyncHandler(
           );
       }
 
-      const file = req.file;
+      // Get file from req.files (uploadFilesMiddleware uses 'files' field)
+      let file = null;
+      if (req.files) {
+        file = Array.isArray(req.files) ? req.files[0] : req.files;
+      }
+
       const { courseId, title, description, resourceType } = req.body;
 
+      // Extract array values from fields (formidable wraps fields in arrays)
+      const courseIdValue = Array.isArray(courseId) ? courseId[0] : courseId;
+      const titleValue = Array.isArray(title) ? title[0] : title;
+      const descriptionValue = Array.isArray(description)
+        ? description[0]
+        : description;
+      const resourceTypeValue = Array.isArray(resourceType)
+        ? resourceType[0]
+        : resourceType;
+
       // Validate required fields
-      if (!courseId || !title || !resourceType) {
+      if (!courseIdValue || !titleValue || !resourceTypeValue) {
         return res
           .status(400)
           .json(
@@ -56,23 +71,23 @@ export const uploadCourseResource = asyncHandler(
 
       // Validate resourceType enum
       const validResourceTypes = ['pdf', 'ppt', 'image', 'link'];
-      if (!validResourceTypes.includes(resourceType)) {
-        return res
-          .status(400)
-          .json(
-            new ApiResponse(
-              400,
-              {},
-              'Resource type must be pdf, ppt, image, or link'
-            )
-          );
-      }
+      // if (!validResourceTypes.includes(resourceTypeValue)) {
+      //   return res
+      //     .status(400)
+      //     .json(
+      //       new ApiResponse(
+      //         400,
+      //         {},
+      //         'Resource type must be pdf, ppt, image, or link'
+      //       )
+      //     );
+      // }
 
       // For link type, fileUrl should be in body; for others, file must be uploaded
       let fileUrl = '';
       let fileSize = null;
 
-      if (resourceType === 'link') {
+      if (resourceTypeValue === 'link') {
         const { fileUrl: linkUrl } = req.body;
         if (!linkUrl) {
           return res
@@ -106,7 +121,7 @@ export const uploadCourseResource = asyncHandler(
           .from(courseTable)
           .where(
             and(
-              eq(courseTable.courseId, courseId),
+              eq(courseTable.courseId, courseIdValue),
               isNull(courseTable.deletedAt)
             )
           );
@@ -120,15 +135,12 @@ export const uploadCourseResource = asyncHandler(
         }
 
         // Verify user is enrolled as instructor in this course
-        const { courseEnrollmentTable } = await import(
-          '../db/schema/tbl-course'
-        );
         const enrollment = await db
           .select()
           .from(courseEnrollmentTable)
           .where(
             and(
-              eq(courseEnrollmentTable.courseId, courseId),
+              eq(courseEnrollmentTable.courseId, courseIdValue),
               eq(courseEnrollmentTable.userId, authUser.userId),
               eq(courseEnrollmentTable.roleInCourse, 'instructor'),
               isNull(courseEnrollmentTable.deletedAt)
@@ -186,13 +198,13 @@ export const uploadCourseResource = asyncHandler(
       }
 
       // If resourceType is link, still verify course exists
-      if (resourceType === 'link') {
+      if (resourceTypeValue === 'link') {
         const existingCourse = await db
           .select()
           .from(courseTable)
           .where(
             and(
-              eq(courseTable.courseId, courseId),
+              eq(courseTable.courseId, courseIdValue),
               isNull(courseTable.deletedAt)
             )
           );
@@ -204,15 +216,12 @@ export const uploadCourseResource = asyncHandler(
         }
 
         // Verify user is enrolled as instructor in this course
-        const { courseEnrollmentTable } = await import(
-          '../db/schema/tbl-course'
-        );
         const enrollment = await db
           .select()
           .from(courseEnrollmentTable)
           .where(
             and(
-              eq(courseEnrollmentTable.courseId, courseId),
+              eq(courseEnrollmentTable.courseId, courseIdValue),
               eq(courseEnrollmentTable.userId, authUser.userId),
               eq(courseEnrollmentTable.roleInCourse, 'instructor'),
               isNull(courseEnrollmentTable.deletedAt)
@@ -235,10 +244,10 @@ export const uploadCourseResource = asyncHandler(
       // Create course resource entry
       const newResource = {
         resourceId: uuidv4(),
-        courseId,
-        title: title.trim(),
-        description: description?.trim() || null,
-        resourceType,
+        courseId: courseIdValue,
+        title: titleValue.trim(),
+        description: descriptionValue?.trim() || null,
+        resourceType: resourceTypeValue,
         fileUrl,
         fileSize,
         uploadedBy: authUser.userId,
