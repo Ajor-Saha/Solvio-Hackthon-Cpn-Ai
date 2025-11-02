@@ -39,6 +39,8 @@ export const verifyJWT = asyncHandler(
           email: userTable.email,
           firstName: userTable.firstName,
           lastName: userTable.lastName,
+          role: userTable.role,
+          departmentId: userTable.departmentId,
         })
         .from(userTable)
         .where(eq(userTable.userId, decodedToken.userId))
