@@ -5,6 +5,8 @@ import express, { NextFunction, Request, Response } from 'express';
 import logger from 'morgan';
 
 import user_router from './routes/auth-route';
+import department_router from './routes/department-route';
+import institution_router from './routes/institution-route';
 
 dotenv.config();
 
@@ -28,8 +30,14 @@ app.use(
   })
 );
 
-// Mount user router
+// Mount routers
 app.use('/api/auth', user_router);
+
+// Institution routes
+app.use('/api/institution', institution_router);
+
+// Department routes
+app.use('/api/department', department_router);
 
 // Health check route
 app.get('/', (req, res) => {

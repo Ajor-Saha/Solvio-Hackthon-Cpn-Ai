@@ -7,29 +7,32 @@ import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
+import { departmentTable } from '../db/schema/tbl-department';
 import { userTable } from '../db/schema/tbl-user';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
-import {
-  generateExpiryDate,
-  generateVerificationCode,
-} from '../utils/generate-verification-code';
-import { sendVerificationEmail } from '../utils/send-verification-email';
 import { createR2Client } from '../utils/upload-r2';
 
 export const signup = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, departmentId, role } =
+      req.body;
 
     // Validate required fields
     if (
-      [firstName, lastName, email, password].some(
-        field => !field || field.trim() === ''
+      [firstName, email, password, departmentId].some(
+        field => !field || (typeof field === 'string' && field.trim() === '')
       )
     ) {
       return res
         .status(400)
-        .json(new ApiResponse(400, {}, 'All fields are required'));
+        .json(
+          new ApiResponse(
+            400,
+            {},
+            'First name, email, password, and department ID are required'
+          )
+        );
     }
 
     // Check if the user already exists by email
@@ -38,91 +41,62 @@ export const signup = asyncHandler(async (req: Request, res: Response) => {
       .from(userTable)
       .where(eq(userTable.email, email));
 
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash password once for both cases
-    const verifyCode = generateVerificationCode();
-    const verifyCodeExpiry = generateExpiryDate();
-
     if (existingUserByEmail.length > 0) {
-      const user = existingUserByEmail[0];
-
-      // If the user is already verified, return an error
-      if (user.isVerified) {
-        res
-          .status(400)
-          .json(
-            new ApiResponse(400, {}, 'User already exists with this email')
-          );
-      }
-
-      // If the user is not verified, update their details
-      await db
-        .update(userTable)
-        .set({
-          password: hashedPassword,
-          verifyCode,
-          verifyCodeExpiry,
-        })
-        .where(eq(userTable.email, email));
-
-      // Send verification email
-      const emailResponse = await sendVerificationEmail(
-        email,
-        firstName,
-        verifyCode
-      );
-
-      if (!emailResponse.success) {
-        res
-          .status(500)
-          .json(new ApiResponse(500, {}, 'Failed to send verification email'));
-      }
-
       return res
-        .status(200)
-        .json(
-          new ApiResponse(
-            200,
-            { email, firstName },
-            'User details updated. Please verify your email.'
-          )
-        );
+        .status(400)
+        .json(new ApiResponse(400, {}, 'User already exists with this email'));
     }
 
-    // If no user exists, create a new user
+    // Validate department exists
+    const existingDepartment = await db
+      .select()
+      .from(departmentTable)
+      .where(eq(departmentTable.departmentId, departmentId));
+
+    if (
+      existingDepartment.length === 0 ||
+      existingDepartment[0].deletedAt !== null
+    ) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, 'Department not found'));
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user with verified status true
     const newUser = {
       userId: uuidv4(),
-      firstName,
-      lastName,
-      email,
+      firstName: firstName.trim(),
+      lastName: lastName?.trim() || null,
+      email: email.trim(),
       password: hashedPassword,
-      verifyCode,
-      verifyCodeExpiry,
-      isVerified: false,
-      role: 'admin' as const,
+      departmentId,
+      role: role || 'student',
+      isVerified: true, // Auto-verified
     };
 
-    await db.insert(userTable).values(newUser);
+    const [createdUser] = await db
+      .insert(userTable)
+      .values(newUser)
+      .returning();
 
-    // Send verification email
-    const emailResponse = await sendVerificationEmail(
-      email,
-      firstName,
-      verifyCode
-    );
-
-    if (!emailResponse.success) {
-      return res
-        .status(500)
-        .json(new ApiResponse(500, {}, 'Failed to send verification email'));
-    }
+    // Remove password from response
+    const {
+      password: _,
+      verifyCode,
+      verifyCodeExpiry,
+      ...userWithoutPassword
+    } = createdUser;
 
     return res
       .status(201)
       .json(
         new ApiResponse(
           201,
-          { newUser },
-          'User registered successfully. Please verify your email.'
+          userWithoutPassword,
+          'User registered successfully'
         )
       );
   } catch (error) {
@@ -198,11 +172,17 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     // Set the access token as a cookie
     res.cookie('accessToken', accessToken, cookieOptions);
 
-    const loginUser = user[0];
+    // Remove sensitive fields from response
+    const {
+      password: _,
+      verifyCode,
+      verifyCodeExpiry,
+      ...userWithoutPassword
+    } = user[0];
 
     return res.status(200).json({
       success: true,
-      data: loginUser,
+      data: userWithoutPassword,
       accessToken: accessToken,
       message: 'Login successful',
     });
@@ -244,75 +224,6 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
     return res
       .status(500)
       .json(new ApiResponse(500, null, 'Internal server error'));
-  }
-});
-
-export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
-  try {
-    const { email, code } = req.body;
-    const decodedEmail = decodeURIComponent(email);
-
-    // Find the user by email
-    const user = await db
-      .select()
-      .from(userTable)
-      .where(eq(userTable.email, decodedEmail));
-
-    if (user.length === 0) {
-      return res.status(404).json(new ApiResponse(404, {}, 'User not found'));
-    }
-
-    const existingUser = user[0];
-
-    // Check if the verification code and expiry are valid
-    const isCodeValid = existingUser.verifyCode === code;
-
-    // Handle null verifyCodeExpiry
-    if (!existingUser.verifyCodeExpiry) {
-      return res
-        .status(400)
-        .json(
-          new ApiResponse(
-            400,
-            {},
-            'Verification code has expired. Please sign up again to get a new code.'
-          )
-        );
-    }
-
-    const isCodeNotExpired =
-      new Date(existingUser.verifyCodeExpiry) > new Date();
-
-    if (isCodeValid && isCodeNotExpired) {
-      // Update user's verification status
-      await db
-        .update(userTable)
-        .set({ isVerified: true })
-        .where(eq(userTable.email, decodedEmail));
-
-      return res
-        .status(200)
-        .json(new ApiResponse(200, {}, 'Account verified successfully'));
-    } else if (!isCodeNotExpired) {
-      return res
-        .status(400)
-        .json(
-          new ApiResponse(
-            400,
-            {},
-            'Verification code has expired. Please sign up again to get a new code.'
-          )
-        );
-    } else {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, {}, 'Incorrect verification code'));
-    }
-  } catch (error) {
-    console.error('Error verifying user:', error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, 'Error verifying user'));
   }
 });
 
@@ -403,12 +314,20 @@ export const updateProfilePicture = asyncHandler(
         .where(eq(userTable.userId, authUser.userId))
         .limit(1);
 
+      // Remove sensitive fields from response
+      const {
+        password: _,
+        verifyCode,
+        verifyCodeExpiry,
+        ...userWithoutPassword
+      } = updatedUser[0];
+
       return res
         .status(200)
         .json(
           new ApiResponse(
             200,
-            updatedUser[0],
+            userWithoutPassword,
             'Profile picture updated successfully'
           )
         );
@@ -606,19 +525,19 @@ export const updateUserProfile = asyncHandler(
         .where(eq(userTable.userId, authUser.userId))
         .returning();
 
-      return res.status(200).json(
-        new ApiResponse(
-          200,
-          {
-            userId: updatedUser.userId,
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            email: updatedUser.email,
-            avatar: updatedUser.avatar,
-          },
-          'Profile updated successfully'
-        )
-      );
+      // Remove sensitive fields from response
+      const {
+        password: _,
+        verifyCode,
+        verifyCodeExpiry,
+        ...userResponse
+      } = updatedUser;
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, userResponse, 'Profile updated successfully')
+        );
     } catch (error) {
       console.error('Error updating profile:', error);
       return res

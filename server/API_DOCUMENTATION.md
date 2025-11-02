@@ -1,0 +1,949 @@
+# CPN-AI API Documentation
+
+## Overview
+
+This document describes all API endpoints for the CPN-AI (Campus Projects & Proof Network) system.
+
+**Base URL**: `http://localhost:8000/api`
+
+**Authentication**: Some endpoints require JWT authentication via the `verifyJWT` middleware.
+
+---
+
+## Table of Contents
+
+1. [Authentication Endpoints](#authentication-endpoints)
+2. [Institution Endpoints](#institution-endpoints)
+3. [Department Endpoints](#department-endpoints)
+
+---
+
+## Authentication Endpoints
+
+### 1. Sign Up (Register)
+
+**POST** `/auth/signup`
+
+Creates a new user account. User is automatically verified.
+
+**Authentication Required**: No
+
+**Request Body:**
+
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "securePassword123",
+  "departmentId": "uuid-v4-string",
+  "role": "student"
+}
+```
+
+**Fields:**
+
+- `firstName` (required): User's first name
+- `lastName` (optional): User's last name
+- `email` (required): User's email address
+- `password` (required): User's password
+- `departmentId` (required): UUID of the department
+- `role` (optional): User role - `student`, `faculty`, or `department_admin` (defaults to `student`)
+
+**Response (201 Created):**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "userId": "uuid-v4-string",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "avatar": null,
+    "role": "student",
+    "departmentId": "uuid-v4-string",
+    "isVerified": true,
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": null
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields or user already exists
+- `500`: Internal server error
+
+---
+
+### 2. Sign In (Login)
+
+**POST** `/auth/signin`
+
+Authenticates a user and returns an access token.
+
+**Authentication Required**: No
+
+**Request Body:**
+
+```json
+{
+  "email": "john.doe@example.com",
+  "password": "securePassword123"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "accessToken": "jwt-token-string",
+  "data": {
+    "userId": "uuid-v4-string",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "avatar": null,
+    "role": "student",
+    "departmentId": "uuid-v4-string",
+    "isVerified": true,
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": null
+  }
+}
+```
+
+**Note**: The access token is also set as an HTTP-only cookie named `accessToken`.
+
+**Error Responses:**
+
+- `400`: Email and password are required
+- `401`: Invalid credentials
+- `404`: User not found or not verified
+- `500`: Internal server error
+
+---
+
+### 3. Sign Out (Logout)
+
+**POST** `/auth/signout`
+
+Logs out the current user by clearing the access token cookie.
+
+**Authentication Required**: Yes
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Logout successful",
+  "data": {}
+}
+```
+
+**Error Responses:**
+
+- `401`: Unauthorized request
+- `500`: Internal server error
+
+---
+
+### 4. Update Profile Picture
+
+**PUT** `/auth/update-profile-picture`
+
+Updates the user's profile picture.
+
+**Authentication Required**: Yes
+
+**Content-Type**: `multipart/form-data`
+
+**Form Data:**
+
+- `file`: Image file (the field name should match what your `uploadMiddleware` expects)
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Profile picture updated successfully",
+  "data": {
+    "userId": "uuid-v4-string",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "avatar": "https://your-cdn-url.com/unique-filename.jpg",
+    "role": "student",
+    "departmentId": "uuid-v4-string",
+    "isVerified": true,
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": "2025-11-02T11:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: No file uploaded or invalid file
+- `401`: Unauthorized
+- `404`: User not found
+- `500`: Internal server error
+
+---
+
+### 5. Change Password
+
+**PUT** `/auth/change-password`
+
+Changes the password for the authenticated user.
+
+**Authentication Required**: Yes
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword456"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Password updated successfully",
+  "data": {}
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing fields, incorrect current password, or user not verified
+- `401`: Not authenticated
+- `500`: Internal server error
+
+---
+
+### 6. Reset Password
+
+**PUT** `/auth/reset-password`
+
+Resets a user's password (no authentication required).
+
+**Authentication Required**: No
+
+**Request Body:**
+
+```json
+{
+  "email": "john.doe@example.com",
+  "password": "newPassword123"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Password reset successfully",
+  "data": {}
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields
+- `404`: User not found or not verified
+- `500`: Internal server error
+
+---
+
+### 7. Update User Profile
+
+**PUT** `/auth/update-profile`
+
+Updates the user's profile information (first name and last name).
+
+**Authentication Required**: Yes
+
+**Request Body:**
+
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "userId": "uuid-v4-string",
+    "firstName": "John",
+    "lastName": "Smith",
+    "email": "john.doe@example.com",
+    "avatar": "https://your-cdn-url.com/profile.jpg",
+    "role": "student",
+    "departmentId": "uuid-v4-string",
+    "isVerified": true,
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": "2025-11-02T12:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: First name is required or user not verified
+- `401`: Not authenticated
+- `500`: Internal server error
+
+---
+
+### 8. Server Status
+
+**GET** `/auth/server-status`
+
+Checks the server status and readiness.
+
+**Authentication Required**: No
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Server status retrieved successfully",
+  "data": {
+    "status": "ready",
+    "message": "Server is ready! You can now sign in.",
+    "uptime": 120,
+    "isReady": true
+  }
+}
+```
+
+**Error Responses:**
+
+- `500`: Error getting server status
+
+---
+
+## Institution Endpoints
+
+**Authentication Required**: No (all institution endpoints are currently public)
+
+### 1. Create Institution
+
+**POST** `/institution/create`
+
+Creates a new institution in the system.
+
+**Request Body:**
+
+```json
+{
+  "name": "University of Example",
+  "code": "UOE"
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "message": "Institution created successfully",
+  "data": {
+    "institutionId": "uuid-v4-string",
+    "name": "University of Example",
+    "code": "UOE",
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": null
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields (name or code)
+- `409`: Institution with this code already exists
+- `500`: Internal server error
+
+---
+
+### 2. Get All Institutions
+
+**GET** `/institution/list`
+
+Retrieves all active institutions (non-deleted).
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Institutions retrieved successfully",
+  "data": [
+    {
+      "institutionId": "uuid-v4-string",
+      "name": "University of Example",
+      "code": "UOE",
+      "createdAt": "2025-11-02T10:30:00.000Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+---
+
+### 3. Get Institution by ID
+
+**GET** `/institution/:institutionId`
+
+Retrieves a specific institution by its ID.
+
+**URL Parameters:**
+
+- `institutionId`: UUID of the institution
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Institution retrieved successfully",
+  "data": {
+    "institutionId": "uuid-v4-string",
+    "name": "University of Example",
+    "code": "UOE",
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": null
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Institution ID is required
+- `404`: Institution not found
+- `500`: Internal server error
+
+---
+
+### 4. Update Institution
+
+**PUT** `/institution/update/:institutionId`
+
+Updates an existing institution.
+
+**URL Parameters:**
+
+- `institutionId`: UUID of the institution
+
+**Request Body:**
+
+```json
+{
+  "name": "Updated University Name",
+  "code": "UUN"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Institution updated successfully",
+  "data": {
+    "institutionId": "uuid-v4-string",
+    "name": "Updated University Name",
+    "code": "UUN",
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": "2025-11-02T11:45:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: No valid fields provided for update
+- `404`: Institution not found
+- `409`: Institution with this code already exists
+- `500`: Internal server error
+
+---
+
+### 5. Delete Institution
+
+**DELETE** `/institution/delete/:institutionId`
+
+Soft deletes an institution (sets deletedAt timestamp).
+
+**URL Parameters:**
+
+- `institutionId`: UUID of the institution
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Institution deleted successfully",
+  "data": {}
+}
+```
+
+**Error Responses:**
+
+- `400`: Institution ID is required
+- `404`: Institution not found
+- `500`: Internal server error
+
+---
+
+## Department Endpoints
+
+**Authentication Required**: No (all department endpoints are currently public)
+
+### 1. Create Department
+
+**POST** `/department/create`
+
+Creates a new department under an institution.
+
+**Request Body:**
+
+```json
+{
+  "institutionId": "uuid-v4-string",
+  "name": "Computer Science",
+  "code": "CS"
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "message": "Department created successfully",
+  "data": {
+    "departmentId": "uuid-v4-string",
+    "institutionId": "uuid-v4-string",
+    "name": "Computer Science",
+    "code": "CS",
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": null,
+    "institutionName": "University of Example",
+    "institutionCode": "UOE"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Missing required fields (institutionId, name, or code)
+- `404`: Institution not found
+- `409`: Department with this code already exists in this institution
+- `500`: Internal server error
+
+---
+
+### 2. Get All Departments
+
+**GET** `/department/list`
+
+Retrieves all active departments with their institution details.
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Departments retrieved successfully",
+  "data": [
+    {
+      "departmentId": "uuid-v4-string",
+      "institutionId": "uuid-v4-string",
+      "name": "Computer Science",
+      "code": "CS",
+      "createdAt": "2025-11-02T10:30:00.000Z",
+      "updatedAt": null,
+      "institutionName": "University of Example",
+      "institutionCode": "UOE"
+    }
+  ]
+}
+```
+
+---
+
+### 3. Get Departments by Institution
+
+**GET** `/department/by-institution/:institutionId`
+
+Retrieves all departments for a specific institution.
+
+**URL Parameters:**
+
+- `institutionId`: UUID of the institution
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Departments retrieved successfully",
+  "data": [
+    {
+      "departmentId": "uuid-v4-string",
+      "institutionId": "uuid-v4-string",
+      "name": "Computer Science",
+      "code": "CS",
+      "createdAt": "2025-11-02T10:30:00.000Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+**Error Responses:**
+
+- `400`: Institution ID is required
+- `404`: Institution not found
+- `500`: Internal server error
+
+---
+
+### 4. Get Department by ID
+
+**GET** `/department/:departmentId`
+
+Retrieves a specific department by its ID with institution details.
+
+**URL Parameters:**
+
+- `departmentId`: UUID of the department
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Department retrieved successfully",
+  "data": {
+    "departmentId": "uuid-v4-string",
+    "institutionId": "uuid-v4-string",
+    "name": "Computer Science",
+    "code": "CS",
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": null,
+    "deletedAt": null,
+    "institutionName": "University of Example",
+    "institutionCode": "UOE"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: Department ID is required
+- `404`: Department not found
+- `500`: Internal server error
+
+---
+
+### 5. Update Department
+
+**PUT** `/department/update/:departmentId`
+
+Updates an existing department.
+
+**URL Parameters:**
+
+- `departmentId`: UUID of the department
+
+**Request Body:**
+
+```json
+{
+  "name": "Updated Department Name",
+  "code": "UDN"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Department updated successfully",
+  "data": {
+    "departmentId": "uuid-v4-string",
+    "institutionId": "uuid-v4-string",
+    "name": "Updated Department Name",
+    "code": "UDN",
+    "deletedAt": null,
+    "createdAt": "2025-11-02T10:30:00.000Z",
+    "updatedAt": "2025-11-02T11:45:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+- `400`: No valid fields provided for update
+- `404`: Department not found
+- `409`: Department with this code already exists in this institution
+- `500`: Internal server error
+
+---
+
+### 6. Delete Department
+
+**DELETE** `/department/delete/:departmentId`
+
+Soft deletes a department (sets deletedAt timestamp).
+
+**URL Parameters:**
+
+- `departmentId`: UUID of the department
+
+**Response (200 OK):**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Department deleted successfully",
+  "data": {}
+}
+```
+
+**Error Responses:**
+
+- `400`: Department ID is required
+- `404`: Department not found
+- `500`: Internal server error
+
+---
+
+## Authentication
+
+### JWT Token Authentication
+
+Some endpoints require JWT authentication. You can provide the token in two ways:
+
+1. **Cookie**: The token is automatically set as an HTTP-only cookie named `accessToken` when you sign in.
+
+2. **Authorization Header**:
+   ```
+   Authorization: Bearer <your-jwt-token>
+   ```
+
+To obtain a token, use the `/api/auth/signin` endpoint.
+
+---
+
+## Common Response Format
+
+All API responses follow this format:
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Success message",
+  "data": {}
+}
+```
+
+**Fields:**
+
+- `statusCode`: HTTP status code
+- `success`: Boolean indicating success (true if statusCode < 400)
+- `message`: Human-readable message
+- `data`: Response data (can be object, array, or null)
+
+---
+
+## User Roles
+
+The system supports three user roles:
+
+1. **`student`**: Regular student users (default)
+2. **`faculty`**: Faculty/teacher users
+3. **`department_admin`**: Department administrators
+
+---
+
+## Notes
+
+1. **Soft Delete**: Users, institutions, and departments use soft delete, meaning records are marked as deleted but not removed from the database.
+
+2. **Password Security**: All passwords are hashed using bcrypt before storage.
+
+3. **Code Uniqueness**:
+
+   - Institution codes must be unique across all institutions
+   - Department codes must be unique within each institution (but can be the same across different institutions)
+
+4. **Code Format**: All institution and department codes are automatically converted to uppercase.
+
+5. **Timestamps**: All records include `createdAt` and `updatedAt` timestamps.
+
+6. **Foreign Key Constraints**:
+
+   - A department cannot be created without a valid `institutionId`
+   - A user cannot be created without a valid `departmentId`
+
+7. **Profile Pictures**: Stored in R2/S3-compatible storage. Old profile pictures are automatically deleted when updating.
+
+8. **Auto-Verification**: New users are automatically verified (`isVerified: true`) - no email verification required.
+
+---
+
+## Environment Variables Required
+
+Make sure these environment variables are set:
+
+```env
+# Server
+PORT=8000
+NODE_ENV=development
+
+# Database
+DATABASE_URL=postgresql://...
+
+# JWT
+JWT_SECRET=your-secret-key
+
+# R2/S3 Storage (for profile pictures)
+BUCKET_NAME=your-bucket-name
+PUBLIC_ACCESS_URL=https://your-cdn-url.com
+```
+
+---
+
+## Example Usage
+
+### Sign Up and Sign In Flow
+
+```bash
+# 1. Sign up
+curl -X POST http://localhost:8000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "departmentId": "department-uuid-here",
+    "role": "student"
+  }'
+
+# 2. Sign in
+curl -X POST http://localhost:8000/api/auth/signin \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+
+# 3. Use authenticated endpoint
+curl -X PUT http://localhost:8000/api/auth/update-profile \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "firstName": "Jane",
+    "lastName": "Smith"
+  }'
+```
+
+### Institution and Department Setup
+
+```bash
+# 1. Create Institution
+curl -X POST http://localhost:8000/api/institution/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Shahjalal University of Science and Technology",
+    "code": "SUST"
+  }'
+
+# 2. Create Department (use institutionId from previous response)
+curl -X POST http://localhost:8000/api/department/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "institutionId": "institution-uuid-here",
+    "name": "Computer Science and Engineering",
+    "code": "CSE"
+  }'
+```
+
+---
+
+## Error Handling
+
+All errors follow the same response format:
+
+```json
+{
+  "statusCode": 400,
+  "success": false,
+  "message": "Error description",
+  "data": null
+}
+```
+
+**Common HTTP Status Codes:**
+
+- `200`: Success
+- `201`: Created
+- `400`: Bad Request (validation error)
+- `401`: Unauthorized (authentication required or invalid token)
+- `404`: Not Found
+- `409`: Conflict (duplicate entry)
+- `500`: Internal Server Error
