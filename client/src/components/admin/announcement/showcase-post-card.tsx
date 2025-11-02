@@ -4,21 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Eye, Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Showcase } from "./types";
 
 interface ShowcasePostCardProps {
   showcase: Showcase;
-  onView: (showcase: Showcase) => void;
   onEdit: (showcase: Showcase) => void;
   onDelete: (showcase: Showcase) => void;
 }
 
 export function ShowcasePostCard({
   showcase,
-  onView,
   onEdit,
   onDelete,
 }: ShowcasePostCardProps) {
+  const router = useRouter();
+
   const formatDate = (date?: string) => {
     if (!date) return "-";
     return new Date(date).toLocaleDateString("en-US", {
@@ -28,17 +29,39 @@ export function ShowcasePostCard({
     });
   };
 
+  const handleCardClick = () => {
+    router.push(`/announcement/${showcase.showcaseId}`);
+  };
+
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/announcement/${showcase.showcaseId}`);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit(showcase);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(showcase);
+  };
+
   return (
-    <Card className="overflow-hidden w-6xl mx-auto hover:shadow-lg transition-shadow">
+    <Card
+      className="overflow-hidden w-full max-w-2xl mx-auto hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Thumbnail */}
       {showcase.thumbnailUrl && (
         <div className="relative w-full h-64 overflow-hidden bg-muted">
-          {/* <Image
+          <img
             src={showcase.thumbnailUrl}
             alt={showcase.title}
-            fill
-            className="object-cover hover:scale-105 transition-transform duration-300"
-          /> */}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          />
         </div>
       )}
 
@@ -48,7 +71,7 @@ export function ShowcasePostCard({
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h3 className="text-xl font-bold line-clamp-2">
+              <h3 className="text-xl font-bold line-clamp-2 hover:underline">
                 {showcase.title}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
@@ -86,18 +109,10 @@ export function ShowcasePostCard({
               Key Achievements:
             </p>
             <ul className="space-y-1">
-              {/* {showcase.achievements.slice(0, 2).map((achievement, idx) => (
-                <li key={idx} className="text-xs text-muted-foreground">
-                  <span className="text-green-600 mr-2">✓</span>
-                  {achievement}
-                </li>
-              ))}
-              {showcase.achievements.length > 2 && (
                 <li className="text-xs text-muted-foreground">
-                  <span className="text-blue-600 mr-2">+</span>
-                  {showcase.achievements.length - 2} more achievements
+                  <span className="text-green-600 mr-2">✓</span>
+                  {showcase.achievements}
                 </li>
-              )} */}
             </ul>
           </div>
         )}
@@ -107,7 +122,7 @@ export function ShowcasePostCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onView(showcase)}
+            onClick={handleViewClick}
             className="flex-1 gap-2"
           >
             <Eye className="w-4 h-4" />
@@ -116,7 +131,7 @@ export function ShowcasePostCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onEdit(showcase)}
+            onClick={handleEditClick}
             className="flex-1 gap-2"
           >
             <Pencil className="w-4 h-4" />
@@ -125,7 +140,7 @@ export function ShowcasePostCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onDelete(showcase)}
+            onClick={handleDeleteClick}
             className="flex-1 gap-2 text-destructive hover:text-destructive"
           >
             <Trash2 className="w-4 h-4" />

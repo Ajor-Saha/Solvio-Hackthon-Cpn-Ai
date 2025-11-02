@@ -39,18 +39,19 @@ export const createShowcase = asyncHandler(
 
       const user = req.user;
 
-      if (!user?.role || user.role !== 'admindepartment_admin') {
+      if (!user?.role || user.role !== 'department_admin') {
         return res
           .status(403)
           .json(
             new ApiResponse(403, null, 'Unauthorized: Insufficient permissions')
           );
       }
+      console.log('achievements:', achievements);
       // Trim strings and reset string fields
-      title = title.trim();
-      description = description.trim();
-      achievements = achievements.trim();
-      tags = tags?.map((item: string) => item.trim()) || [];
+      title = title?.trim();
+      description = description?.trim();
+      achievements = achievements?.trim();
+      tags = tags?.map((item: string) => item?.trim()) || [];
       thumbnailUrl = thumbnailUrl?.trim();
       metadata = metadata || {};
       featured = featured || false;

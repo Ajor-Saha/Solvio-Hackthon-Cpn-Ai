@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -9,8 +8,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { X } from "lucide-react";
-import Image from "next/image";
 import type { Showcase } from "./types";
 
 interface ViewShowcaseSheetProps {
@@ -51,11 +48,11 @@ export function ViewShowcaseSheet({
           {/* Thumbnail */}
           {showcase.thumbnailUrl && (
             <div className="relative w-full h-64 rounded-lg overflow-hidden bg-muted">
-              <Image
+              <img
                 src={showcase.thumbnailUrl}
                 alt={showcase.title}
-                fill
-                className="object-cover"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
           )}
@@ -81,19 +78,16 @@ export function ViewShowcaseSheet({
           </div>
 
           {/* Achievements */}
-          {showcase.achievements && showcase.achievements.length > 0 && (
+          {showcase.achievements && (
             <div className="space-y-2">
               <h3 className="font-semibold text-sm">Achievements</h3>
               <ul className="space-y-2">
-                {showcase.achievements.map((achievement, idx) => (
                   <li
-                    key={idx}
                     className="text-sm text-muted-foreground flex gap-2"
                   >
                     <span className="text-green-600">✓</span>
-                    {achievement}
+                    {showcase.achievements}
                   </li>
-                ))}
               </ul>
             </div>
           )}

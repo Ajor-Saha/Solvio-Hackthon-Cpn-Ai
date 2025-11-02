@@ -14,10 +14,8 @@ import { env } from "@/config/env";
 import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { CreateShowcaseDialog } from "@/components/admin/announcement/create-showcase-dialog";
+import { useRouter } from "next/navigation";
 import { EditShowcaseDialog } from "@/components/admin/announcement/edit-showcase-dialog";
-import { ViewShowcaseSheet } from "@/components/admin/announcement/view-showcase-sheet";
 import { DeleteConfirmDialog } from "@/components/admin/announcement/delete-confirm-dialog";
 import { ShowcasePostCard } from "@/components/admin/announcement/showcase-post-card";
 import type {
@@ -25,14 +23,6 @@ import type {
   ListShowcaseResponse,
   ApiResponse,
 } from "@/components/admin/announcement/types";
-
-/**
- * API Documentation:
- * 1. GET All Showcases
- *    URL: GET /api/showcases?page=1&limit=10&tags=AI,ML&featured=true&search=drug
- *    Success: { statusCode:200, data:{ data:Showcase[], total:number, page:number, limit:number }, message:"", success:true }
- *    Error:   { success:false, message:"..." }
- */
 
 interface FilterOptions {
   page: number;
@@ -43,15 +33,12 @@ interface FilterOptions {
 
 export default function AnnouncementPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [showcases, setShowcases] = useState<Showcase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
   // Dialog states
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Selected showcase states
@@ -99,20 +86,7 @@ export default function AnnouncementPage() {
     fetchShowcases();
   }, [filters.page, filters.limit, filters.search, filters.featured]);
 
-  // Check for create parameter in URL
-  useEffect(() => {
-    if (searchParams.get("create") === "true") {
-      router.push("/announcement");
-      router.prefetch("/announcement?create");
-    }
-  }, [searchParams, router]);
-
   // Handle actions
-  const handleView = (showcase: Showcase) => {
-    setSelectedShowcase(showcase);
-    setViewSheetOpen(true);
-  };
-
   const handleEdit = (showcase: Showcase) => {
     setEditingShowcase(showcase);
     setEditDialogOpen(true);
@@ -121,10 +95,6 @@ export default function AnnouncementPage() {
   const handleDelete = (showcase: Showcase) => {
     setSelectedShowcase(showcase);
     setDeleteDialogOpen(true);
-  };
-
-  const handleCreateSuccess = () => {
-    setFilters({ ...filters, page: 1 });
   };
 
   const handleEditSuccess = () => {
@@ -202,9 +172,9 @@ export default function AnnouncementPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-3">
             <div className="animate-pulse space-y-3">
-              <div className="h-64 bg-muted rounded-lg"></div>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-4 bg-muted rounded w-1/2"></div>
+              <div className="h-64 bg-muted rounded-lg max-w-2xl mx-auto w-full"></div>
+              <div className="h-4 bg-muted rounded w-3/4 max-w-2xl mx-auto"></div>
+              <div className="h-4 bg-muted rounded w-1/2 max-w-2xl mx-auto"></div>
             </div>
           </div>
         </div>
@@ -230,7 +200,6 @@ export default function AnnouncementPage() {
             <ShowcasePostCard
               key={showcase.showcaseId}
               showcase={showcase}
-              onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
@@ -278,23 +247,11 @@ export default function AnnouncementPage() {
       )}
 
       {/* Dialogs */}
-      <CreateShowcaseDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSuccess={handleCreateSuccess}
-      />
-
       <EditShowcaseDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         showcase={editingShowcase}
         onSuccess={handleEditSuccess}
-      />
-
-      <ViewShowcaseSheet
-        open={viewSheetOpen}
-        onOpenChange={setViewSheetOpen}
-        showcase={selectedShowcase}
       />
 
       <DeleteConfirmDialog

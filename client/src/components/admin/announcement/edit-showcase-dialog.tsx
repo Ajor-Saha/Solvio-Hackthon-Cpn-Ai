@@ -14,8 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Axios } from "@/config/axios";
 import { env } from "@/config/env";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
 import { TagInput } from "./tag-input";
 import type { CreateShowcasePayload, Showcase } from "./types";
 
@@ -37,7 +37,7 @@ export function EditShowcaseDialog({
   const [formData, setFormData] = useState<CreateShowcasePayload>({
     title: "",
     description: "",
-    achievements: [],
+    achievements: "",
     tags: [],
     thumbnailUrl: "",
     featured: false,
@@ -49,7 +49,7 @@ export function EditShowcaseDialog({
       setFormData({
         title: showcase.title,
         description: showcase.description,
-        achievements: showcase.achievements || [],
+        achievements: showcase.achievements || "",
         tags: showcase.tags,
         thumbnailUrl: showcase.thumbnailUrl || "",
         featured: showcase.featured,
@@ -142,14 +142,9 @@ export function EditShowcaseDialog({
               <Label htmlFor="achievements">Achievements</Label>
               <Textarea
                 id="achievements"
-                value={formData.achievements?.join("\n") || ""}
+                value={formData.achievements || ""}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    achievements: e.target.value
-                      .split("\n")
-                      .filter((a) => a.trim()),
-                  })
+                  setFormData({ ...formData, achievements: e.target.value })
                 }
                 placeholder="Enter achievements (one per line)"
                 rows={3}

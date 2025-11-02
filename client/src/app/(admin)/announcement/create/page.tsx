@@ -21,7 +21,7 @@ export default function CreateShowcasePage() {
   const [formData, setFormData] = useState<CreateShowcasePayload>({
     title: "",
     description: "",
-    achievements: [],
+    achievements: "",
     tags: [],
     thumbnailUrl: "",
     featured: false,
@@ -32,7 +32,7 @@ export default function CreateShowcasePage() {
     setFormData({
       title: "",
       description: "",
-      achievements: [],
+      achievements: "",
       tags: [],
       thumbnailUrl: "",
       featured: false,
@@ -153,13 +153,11 @@ export default function CreateShowcasePage() {
                 <Label htmlFor="achievements">Achievements (Optional)</Label>
                 <Textarea
                   id="achievements"
-                  value={formData.achievements?.join("\n") || ""}
+                  value={formData.achievements || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      achievements: e.target.value
-                        .split("\n")
-                        .filter((a) => a.trim()),
+                      achievements: e.target.value,
                     })
                   }
                   placeholder="Enter each achievement on a new line..."

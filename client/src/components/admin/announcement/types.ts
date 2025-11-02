@@ -33,7 +33,7 @@ export interface Showcase {
   showcaseId: string;
   title: string;
   description: string;
-  achievements?: string[];
+  achievements?: string;
   tags: string[];
   thumbnailUrl?: string;
   featured: boolean;
@@ -51,7 +51,7 @@ export interface ShowcaseFull extends Showcase {
 export interface CreateShowcasePayload {
   title: string;
   description: string;
-  achievements?: string[];
+  achievements?: string;
   tags: string[];
   thumbnailUrl?: string;
   featured: boolean;
