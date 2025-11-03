@@ -368,7 +368,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           onSignOut={handleSignOut}
         />
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail  />
     </Sidebar>
   );
 }
