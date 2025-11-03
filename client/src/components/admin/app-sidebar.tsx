@@ -35,6 +35,7 @@ import {
   Plus,
   SettingsIcon,
   Trophy,
+  UserCheck,
   UserCog,
   UserPlus,
   Users
@@ -185,6 +186,14 @@ const getSidebarData = (role: string) => {
               },
             ],
           },
+
+          // New top-level section
+          {
+            title: "Course Enrollment",
+            url: "/course-enrollment",
+            icon: <UserCheck size={20} />,
+            items: [],
+          },
           {
             title: "Announcement",
             url: "/announcement",
@@ -259,6 +268,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
+  // Dynamic Dashboard label
+  const dashboardLabel =
+    userRole === "student"
+      ? "Student Dashboard"
+      : userRole === "faculty"
+      ? "Faculty Dashboard"
+      : userRole === "department_admin"
+      ? "Admin Dashboard"
+      : "Dashboard";
+
   return (
     <Sidebar {...props}
     className="[&>[data-sidebar=sidebar]]:bg-slate-100
@@ -290,7 +309,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             className="text-sm px-2 py-2 flex items-center gap-2 dark:bg-[#191919] dark:hover:bg-gray-800"
           >
             <GalleryVerticalEnd size={18} />
-            <span>Dashboard</span>
+            <span>{dashboardLabel}</span>
           </Link>
         </SidebarGroup>
         <SidebarGroup>
@@ -359,7 +378,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           onSignOut={handleSignOut}
         />
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail  />
     </Sidebar>
   );
 }
