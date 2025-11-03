@@ -77,5 +77,6 @@
   // Additional helpful settings
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true
+  "files.trimFinalNewlines": true,
+  "cursor.composer.usageSummaryDisplay": "always"
 }

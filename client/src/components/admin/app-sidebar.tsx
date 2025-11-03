@@ -23,14 +23,17 @@ import { Axios } from "@/config/axios";
 import { env } from "@/config/env";
 import useAuthStore from "@/store/store";
 import {
+  Award,
   Bot,
   Briefcase,
   Calendar,
   FileText,
   GalleryVerticalEnd,
+  GraduationCap,
   KeyRound,
   Lightbulb,
   Megaphone,
+  Microscope,
   Minus,
   Plus,
   SettingsIcon,
@@ -200,19 +203,29 @@ const getSidebarData = (role: string) => {
             icon: <Megaphone size={20} />,
             items: [
               {
-                title: "Showcase",
-                url: "/announcement",
-                icon: <GalleryVerticalEnd size={16} />,
-              },
-              {
-                title: "Job Posting",
-                url: "/announcement/job-posting",
+                title: "Jobs",
+                url: "/announcement/jobs",
                 icon: <Briefcase size={16} />,
               },
               {
-                title: "Competition",
-                url: "/announcement/competition",
+                title: "Competitions",
+                url: "/announcement/competitions",
                 icon: <Trophy size={16} />,
+              },
+              {
+                title: "Achievements",
+                url: "/announcement/achievements",
+                icon: <Award size={16} />,
+              },
+              {
+                title: "Research",
+                url: "/announcement/research",
+                icon: <Microscope size={16} />,
+              },
+              {
+                title: "Higher Studies",
+                url: "/announcement/higher-studies",
+                icon: <GraduationCap size={16} />,
               },
             ],
           },
