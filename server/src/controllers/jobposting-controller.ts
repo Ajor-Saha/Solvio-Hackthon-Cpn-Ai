@@ -213,7 +213,7 @@ export const listJobs = asyncHandler(async (req: Request, res: Response) => {
     location,
     page = '1',
     limit = '10',
-    jobStatus = 'active',
+    jobStatus = 'all',
   } = req.query;
 
   const pageNum = parseInt(page as string, 10) || 1;
@@ -221,15 +221,35 @@ export const listJobs = asyncHandler(async (req: Request, res: Response) => {
   const offset = (pageNum - 1) * limitNum;
 
   const user = req.user;
-
-  const publicStatusCondition = and(
-    eq(jobPostingTable.status, 'active'),
-    isNull(jobPostingTable.deletedAt),
-    or(
-      isNull(jobPostingTable.applicationDeadline),
-      sql`${jobPostingTable.applicationDeadline} >= CURRENT_DATE` as SQL
-    )
-  );
+  let publicStatusCondition;
+  if (jobStatus === 'all') {
+    publicStatusCondition = and(
+      or(
+        eq(jobPostingTable.status, 'active'),
+        eq(jobPostingTable.status, 'closed'),
+        eq(jobPostingTable.status, 'archived')
+      ),
+      isNull(jobPostingTable.deletedAt),
+      or(
+        isNull(jobPostingTable.applicationDeadline),
+        sql`${jobPostingTable.applicationDeadline} >= CURRENT_DATE` as SQL
+      )
+    );
+  }
+  if (jobStatus !== 'draft') {
+    const status = ['active', 'closed', 'archived'].includes(
+      jobStatus as string
+    );
+    // default to active
+    publicStatusCondition = and(
+      eq(jobPostingTable.status, status ? (jobStatus as string) : 'active'),
+      isNull(jobPostingTable.deletedAt),
+      or(
+        isNull(jobPostingTable.applicationDeadline),
+        sql`${jobPostingTable.applicationDeadline} >= CURRENT_DATE` as SQL
+      )
+    );
+  }
 
   const filtersCondition = [];
 
@@ -250,10 +270,18 @@ export const listJobs = asyncHandler(async (req: Request, res: Response) => {
 
   // if user is not found then treat as public user and return most recently posted active jobs
   if (!user) {
+    if (jobStatus === 'draft') {
+      return res
+        .status(403)
+        .json(
+          new ApiResponse(403, null, 'Unauthorized: Insufficient permissions')
+        );
+    }
+
     const jobs = await db
       .select()
       .from(jobPostingTable)
-      .where(publicStatusCondition)
+      .where(and(publicStatusCondition, and(...filtersCondition)))
       .orderBy(desc(jobPostingTable.postedAt))
       .limit(limitNum)
       .offset(offset);
@@ -266,7 +294,7 @@ export const listJobs = asyncHandler(async (req: Request, res: Response) => {
           total: jobs.length,
           page: pageNum,
           limit: limitNum,
-          filtersApplied: { jobType, location },
+          filtersApplied: { q, jobType, location },
         },
         'Most recent active jobs fetched successfully'
       )
@@ -284,7 +312,12 @@ export const listJobs = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  const whereClause = and(...filtersCondition);
+  const departmentCondition = eq(
+    jobPostingTable.departmentId,
+    user.departmentId
+  );
+
+  const whereClause = and(...filtersCondition, departmentCondition);
 
   const [totalResult, jobs] = await Promise.all([
     db.select({ count: count() }).from(jobPostingTable).where(whereClause),
@@ -307,9 +340,79 @@ export const listJobs = asyncHandler(async (req: Request, res: Response) => {
         total,
         page: pageNum,
         limit: limitNum,
-        filtersApplied: { jobType, location },
+        filtersApplied: { q, jobType, location },
       },
       'Jobs fetched successfully'
+    )
+  );
+});
+
+/**
+ * GET /api/jobs/stats
+ * Get job statistics for admin dashboard (department_admin only)
+ * Returns: { totalJobs: number, activeJobs: number, closedJobs: number, draftJobs: number }
+ *
+ */
+
+export const getJobStats = asyncHandler(async (req: Request, res: Response) => {
+  const user = req.user;
+
+  if (!user?.role || user.role !== 'department_admin') {
+    return res
+      .status(403)
+      .json(
+        new ApiResponse(403, null, 'Unauthorized: Insufficient permissions')
+      );
+  }
+
+  const departmentCondition = eq(
+    jobPostingTable.departmentId,
+    user.departmentId
+  );
+
+  const [totalResult, activeResult, closedResult, draftResult, archivedResult] =
+    await Promise.all([
+      db
+        .select({ count: count() })
+        .from(jobPostingTable)
+        .where(departmentCondition),
+      db
+        .select({ count: count() })
+        .from(jobPostingTable)
+        .where(and(departmentCondition, eq(jobPostingTable.status, 'active'))),
+      db
+        .select({ count: count() })
+        .from(jobPostingTable)
+        .where(and(departmentCondition, eq(jobPostingTable.status, 'closed'))),
+      db
+        .select({ count: count() })
+        .from(jobPostingTable)
+        .where(and(departmentCondition, eq(jobPostingTable.status, 'draft'))),
+      db
+        .select({ count: count() })
+        .from(jobPostingTable)
+        .where(
+          and(departmentCondition, eq(jobPostingTable.status, 'archived'))
+        ),
+    ]);
+
+  const total = Number(totalResult[0]?.count) || 0;
+  const active = Number(activeResult[0]?.count) || 0;
+  const closed = Number(closedResult[0]?.count) || 0;
+  const draft = Number(draftResult[0]?.count) || 0;
+  const archived = Number(archivedResult[0]?.count) || 0;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        totalJobs: total,
+        activeJobs: active,
+        closedJobs: closed,
+        draftJobs: draft,
+        archivedJobs: archived,
+      },
+      'Job statistics fetched successfully'
     )
   );
 });

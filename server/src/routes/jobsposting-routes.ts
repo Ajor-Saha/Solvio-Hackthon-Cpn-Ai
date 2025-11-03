@@ -9,6 +9,7 @@ import {
   createJob,
   deleteJob,
   getJobById,
+  getJobStats,
   listJobs,
   updateJob,
 } from '../controllers/jobposting-controller';
@@ -17,6 +18,8 @@ import { verifyJWT } from '../middleware/auth-middleware';
 const jobpost_router = Router();
 
 jobpost_router.route('/').post(verifyJWT, createJob);
+jobpost_router.route('/admin').get(verifyJWT, listJobs); // admin accessed job listing
+jobpost_router.route('/stats').get(verifyJWT, getJobStats); // job stats for admin dashboard
 jobpost_router.get('/:jobId', getJobById);
 jobpost_router
   .route('/:jobId')
