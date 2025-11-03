@@ -25,9 +25,8 @@ export const researchTable = pgTable('tbl_research', {
     .references(() => courseTable.courseId),
   title: varchar('title', { length: 500 }).notNull(),
   description: text('description'),
-  studentId: text('student_id')
-    .notNull()
-    .references(() => userTable.userId),
+  // Removed studentId - now handled by tbl_research_student junction table
+  // This allows multiple students to collaborate on one research
   supervisorId: text('supervisor_id')
     .notNull()
     .references(() => userTable.userId),

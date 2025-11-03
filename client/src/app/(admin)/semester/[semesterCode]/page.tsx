@@ -135,13 +135,32 @@ export default function SemesterPage() {
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
                 <Calendar className="w-6 h-6" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {semester && getSemesterName(year, sem)}
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Courses for semester {semester}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {user?.role === "department_admin"
+                      ? `All courses for semester ${semester}`
+                      : `Your enrolled courses for semester ${semester}`}
+                  </p>
+                  {user?.role === "department_admin" && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      Admin View
+                    </span>
+                  )}
+                  {user?.role === "faculty" && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      Faculty View
+                    </span>
+                  )}
+                  {user?.role === "student" && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                      Student View
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -151,7 +170,9 @@ export default function SemesterPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-blue-100 text-sm">Total Courses</p>
+                      <p className="text-blue-100 text-sm">
+                        {user?.role === "department_admin" ? "Total Courses" : "Enrolled Courses"}
+                      </p>
                       <p className="text-2xl font-bold">{courses.length}</p>
                     </div>
                     <BookOpen className="w-8 h-8 text-blue-200" />
@@ -163,7 +184,9 @@ export default function SemesterPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-green-100 text-sm">Total Credits</p>
+                      <p className="text-green-100 text-sm">
+                        {user?.role === "department_admin" ? "Total Credits" : "My Credits"}
+                      </p>
                       <p className="text-2xl font-bold">
                         {courses.reduce((sum, course) => sum + course.credits, 0)}
                       </p>
@@ -204,12 +227,21 @@ export default function SemesterPage() {
                 <BookOpen className="w-12 h-12 text-gray-400" />
               </div>
               <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-                No courses for this semester
+                {user?.role === "department_admin"
+                  ? "No courses for this semester"
+                  : "No enrolled courses for this semester"}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                No courses have been created for {semester && getSemesterName(year, sem)} yet.
-                {user?.role === "department_admin" && (
-                  <span> Visit the Subjects page to create courses for this semester.</span>
+                {user?.role === "department_admin" ? (
+                  <>
+                    No courses have been created for {semester && getSemesterName(year, sem)} yet.
+                    <span> Visit the Subjects page to create courses for this semester.</span>
+                  </>
+                ) : (
+                  <>
+                    You are not enrolled in any courses for {semester && getSemesterName(year, sem)}.
+                    <span> Contact your department admin for course enrollment.</span>
+                  </>
                 )}
               </p>
             </div>

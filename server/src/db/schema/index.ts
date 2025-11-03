@@ -8,7 +8,9 @@ export * from './tbl-user';
 // Project Management
 export * from './tbl-milestone';
 export * from './tbl-project';
+export * from './tbl-project-student';
 export * from './tbl-research';
+export * from './tbl-research-student';
 
 // Supervision & Collaboration
 export * from './tbl-supervision';

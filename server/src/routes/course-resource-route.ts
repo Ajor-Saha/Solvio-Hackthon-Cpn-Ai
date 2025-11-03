@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   deleteCourseResource,
   getCourseResources,
+  updateCourseResource,
   uploadCourseResource,
 } from '../controllers/course-resource-controllers';
 import { verifyJWT } from '../middleware/auth-middleware';
@@ -15,6 +16,8 @@ router
   .post(verifyJWT, uploadFilesMiddleware, uploadCourseResource);
 
 router.route('/:courseId').get(verifyJWT, getCourseResources);
+
+router.route('/update/:resourceId').put(verifyJWT, updateCourseResource);
 
 router.route('/delete/:resourceId').delete(verifyJWT, deleteCourseResource);
 
