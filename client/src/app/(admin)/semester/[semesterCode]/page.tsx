@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Axios } from "@/config/axios";
 import useAuthStore from "@/store/store";
 import { BookOpen, Calendar, GraduationCap, Users } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -221,48 +221,56 @@ export default function SemesterPage() {
               {courses.map((course) => (
                 <Card
                   key={course.courseId}
-                  className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 hover:scale-[1.02]"
+                  className="group hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 overflow-hidden"
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                          {course.courseCode}
-                        </div>
-                        <div className="flex flex-col">
-                          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            {course.courseCode}
-                          </CardTitle>
-                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-0 font-medium w-fit">
-                            {course.semester}
-                          </Badge>
-                        </div>
+                  {/* Card Header with Gradient Accent */}
+                  <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-md flex-shrink-0">
+                        {course.courseCode.length > 8 ? (
+                          <span className="text-[10px] px-1 text-center leading-tight">{course.courseCode}</span>
+                        ) : (
+                          course.courseCode
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/semester/${semesterCode}/${course.courseCode}`}
+                          className="block"
+                        >
+                          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer hover:underline">
+                            {course.title}
+                          </h3>
+                        </Link>
                       </div>
                     </div>
-                    <h3 className="text-base font-medium text-gray-800 dark:text-gray-200 mt-2">
-                      {course.title}
-                    </h3>
                   </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Credits:</span>
-                        <span className="font-medium">{course.credits}</span>
+                  <CardContent className="space-y-4 pt-0">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Credits</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{course.credits}</div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Capacity:</span>
-                        <span className="font-medium">{course.capacity}</span>
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Capacity</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{course.capacity}</div>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-xs text-gray-500">
-                        Created: {formatDate(course.createdAt)}
+                    {/* Footer with Dates */}
+                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">Created</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{formatDate(course.createdAt)}</span>
                       </div>
                       {course.updatedAt && course.updatedAt !== course.createdAt && (
-                        <div className="text-xs text-gray-500">
-                          Updated: {formatDate(course.updatedAt)}
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-500 dark:text-gray-400">Updated</span>
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">{formatDate(course.updatedAt)}</span>
                         </div>
                       )}
                     </div>
