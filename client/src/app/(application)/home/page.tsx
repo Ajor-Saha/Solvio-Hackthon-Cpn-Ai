@@ -147,12 +147,12 @@ export default function StudyFlowLandingPage() {
                 variants={fadeInUp}
                 className="text-5xl md:text-7xl font-bold mb-8 text-slate-900 dark:text-white tracking-tight"
               >
-                StudyFlow
+                CPN AI
                 <motion.span
                   className="block text-3xl md:text-5xl font-light text-slate-600 dark:text-slate-300 mt-4"
                   variants={fadeInUp}
                 >
-                  Intelligent Learning Analytics
+                  AI-Powered Campus Projects & Proof Network
                 </motion.span>
               </motion.h1>
 
