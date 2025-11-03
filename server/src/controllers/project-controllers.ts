@@ -8,6 +8,7 @@ import { projectStudentTable } from '../db/schema/tbl-project-student';
 import { userTable } from '../db/schema/tbl-user';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
+import { sendProjectAssignmentEmail } from '../utils/send-project-notification';
 
 // Create a new project
 export const createProject = asyncHandler(
@@ -216,6 +217,52 @@ export const createProject = asyncHandler(
         validStudents.includes(s.userId)
       );
 
+      // Send email notifications to all assigned students
+      const emailResults = await Promise.allSettled(
+        assignedStudents.map(async student => {
+          const courseDetails = existingCourse[0];
+          const supervisorName = `${user.firstName} ${user.lastName}`;
+
+          // Prepare team members list (excluding current student for their own email)
+          const teamMembers = assignedStudents.map(s => ({
+            firstName: s.firstName,
+            lastName: s.lastName || '',
+            email: s.email,
+          }));
+
+          return sendProjectAssignmentEmail(
+            student.email,
+            student.firstName,
+            createdProject.title,
+            createdProject.description,
+            supervisorName,
+            user.email,
+            courseDetails.title, // Use 'title' instead of 'courseTitle'
+            createdProject.status,
+            createdProject.startDate,
+            createdProject.endDate,
+            createdProject.projectUrl,
+            teamMembers
+          );
+        })
+      );
+
+      // Count successful and failed emails
+      const emailStats = {
+        sent: emailResults.filter(
+          r => r.status === 'fulfilled' && r.value.success
+        ).length,
+        failed: emailResults.filter(
+          r =>
+            r.status === 'rejected' ||
+            (r.status === 'fulfilled' && !r.value.success)
+        ).length,
+      };
+
+      console.log(
+        `Email notifications: ${emailStats.sent} sent, ${emailStats.failed} failed`
+      );
+
       return res.status(201).json(
         new ApiResponse(
           201,
@@ -227,10 +274,11 @@ export const createProject = asyncHandler(
               assigned: validStudents.length,
               failed: invalidStudents.length,
             },
+            emailNotifications: emailStats,
             invalidStudents:
               invalidStudents.length > 0 ? invalidStudents : undefined,
           },
-          'Project created successfully'
+          'Project created successfully and notifications sent'
         )
       );
     } catch (error) {
