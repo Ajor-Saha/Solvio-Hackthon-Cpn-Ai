@@ -1,17 +1,17 @@
 import { Router } from 'express';
 import {
-    bulkEnrollStudents,
-    createCourse,
-    deleteCourse,
-    enrollUser,
-    getAllCourses,
-    getCourseById,
-    getCourseEnrollments,
-    getCoursesBySemester,
-    getCoursesBySemesterQuery,
-    getDepartmentCourses,
-    getUserCourses,
-    updateCourse,
+  bulkEnrollStudents,
+  createCourse,
+  deleteCourse,
+  enrollUser,
+  getAllCourses,
+  getCourseById,
+  getCourseEnrollments,
+  getCoursesBySemester,
+  getCoursesBySemesterQuery,
+  getDepartmentCourses,
+  getUserCourses,
+  updateCourse,
 } from '../controllers/course-controllers';
 import { verifyJWT } from '../middleware/auth-middleware';
 
@@ -24,7 +24,7 @@ router.use('*', (req, res, next) => {
     url: req.url,
     originalUrl: req.originalUrl,
     params: req.params,
-    query: req.query
+    query: req.query,
   });
   next();
 });
@@ -40,7 +40,7 @@ router.use('/semester/:semester', (req, res, next) => {
     url: req.url,
     params: req.params,
     method: req.method,
-    originalUrl: req.originalUrl
+    originalUrl: req.originalUrl,
   });
   next();
 });
@@ -48,7 +48,10 @@ router.use('/semester/:semester', (req, res, next) => {
 // Simple test route
 router.route('/test-semester').get((req, res) => {
   console.log('Test semester route hit');
-  res.json({ message: 'Test semester route working', timestamp: new Date().toISOString() });
+  res.json({
+    message: 'Test semester route working',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Alternative route using query parameters (more reliable for complex values)
@@ -62,7 +65,7 @@ router.route('/delete/:courseId').delete(verifyJWT, deleteCourse);
 // Enrollment routes
 router.route('/enroll').post(verifyJWT, enrollUser); // Single instructor enrollment
 router.route('/enroll/bulk').post(verifyJWT, bulkEnrollStudents); // Bulk student enrollment
-router.route('/:courseId/enrollments').get(verifyJWT, getCourseEnrollments);
+router.route('/enrollments/:courseId').get(verifyJWT, getCourseEnrollments); // Get course enrollments
 router.route('/user/:userId/courses').get(verifyJWT, getUserCourses);
 
 export default router;
