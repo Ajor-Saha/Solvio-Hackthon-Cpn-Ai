@@ -17,7 +17,7 @@ function Footer() {
             className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 md:mb-0"
             whileHover={{ scale: 1.1 }}
           >
-            <i>StudyFlow</i>
+            <i>CPN AI</i>
           </motion.a>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600 dark:text-gray-400">
             {[
@@ -61,7 +61,7 @@ function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 dark:text-gray-400">
           <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-4 md:mb-0">
-            <span>&copy; 2025 EduLearn - Empowering Education Through Technology</span>
+            <span>&copy; 2025 CPN AI - AI-Powered Campus Projects & Proof Network</span>
             {["Terms", "Privacy", "Support"].map((item, index) => (
               <motion.a
                 key={index}

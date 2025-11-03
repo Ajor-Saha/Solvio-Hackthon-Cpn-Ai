@@ -23,16 +23,16 @@ export const metadata: Metadata = {
       follow: true,
     },
   },
-  title: "StudyFlow - AI-Powered Educational Learning Platform",
+  title: "CPN AI - AI-Powered Campus Projects & Proof Network",
   description:
-    "StudyFlow revolutionizes education with AI-powered personalized learning experiences. Create adaptive learning paths, generate intelligent content, track progress, and get real-time AI assistance for effective and engaging education.",
+    "CPN AI revolutionizes education with AI-powered personalized learning experiences. Create adaptive learning paths, generate intelligent content, track progress, and get real-time AI assistance for effective and engaging education.",
   keywords: [
     "AI Education",
     "Personalized Learning",
     "Educational Technology",
     "Adaptive Learning",
     "AI Tutoring",
-    "StudyFlow",
+    "CPN AI",
     "Online Learning",
     "Educational Platform",
     "AI-Generated Content",
@@ -41,9 +41,9 @@ export const metadata: Metadata = {
     "Educational AI",
   ],
   openGraph: {
-    title: "StudyFlow - AI-Powered Educational Learning Platform",
+    title: "CPN AI - AI-Powered Campus Projects & Proof Network",
     description:
-      "Transform your learning experience with StudyFlow's AI-driven personalized education platform. Adaptive learning paths, intelligent content generation, and real-time AI assistance.",
+      "Transform your learning experience with CPN AI's AI-driven personalized education platform. Adaptive learning paths, intelligent content generation, and real-time AI assistance.",
     url: "https://study-flow.taskforges.com",
     type: "website",
     images: [
@@ -51,20 +51,20 @@ export const metadata: Metadata = {
         url: "https://drive.google.com/uc?id=1vmNdUL9q3mmBusgQ15y-td0gXRc_2c5R", // Replace with actual image URL
         width: 1200,
         height: 630,
-        alt: "StudyFlow AI-Powered Educational Learning Platform",
+        alt: "CPN AI - AI-Powered Campus Projects & Proof Network",
       },
     ],
-    siteName: "StudyFlow",
+    siteName: "CPN AI",
   },
   alternates: {
-    canonical: "https://study-flow.taskforges.com",
+    canonical: "https://cpn-ai.taskforges.com",
   },
   twitter: {
     card: "summary_large_image",
-    site: "@StudyFlow", // Replace with your Twitter handle
-    title: "StudyFlow - AI-Powered Educational Learning Platform",
+    site: "@CPN AI", // Replace with your Twitter handle
+    title: "CPN AI - AI-Powered Campus Projects & Proof Network",
     description:
-      "Revolutionize your education with AI-driven personalized learning. Adaptive paths, intelligent content generation, and 24/7 AI tutoring support.",
+      "Revolutionize your campus projects with AI-driven personalized learning. Adaptive paths, intelligent content generation, and 24/7 AI tutoring support.",
     images: ["https://drive.google.com/uc?id=1vmNdUL9q3mmBusgQ15y-td0gXRc_2c5R"], // Replace with actual image URL
   },
 };
