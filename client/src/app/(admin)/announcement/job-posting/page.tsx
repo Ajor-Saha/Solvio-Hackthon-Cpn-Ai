@@ -6,6 +6,7 @@ import {
   DeleteConfirmDialog,
   type Job,
   JobPostCard,
+  JobStatsResponse,
   type ListJobResponse
 } from "@/components/admin/job-posting";
 import { Button } from "@/components/ui/button";
@@ -43,8 +44,9 @@ export default function JobPostingsPage() {
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
-    internships: 0,
-    fullTime: 0,
+    draft: 0,
+    closed: 0,
+    archived: 0,
   });
 
   // Fetch jobs
@@ -56,12 +58,12 @@ export default function JobPostingsPage() {
         limit,
       };
 
-      if (searchTerm) params.search = searchTerm;
+      if (searchTerm) params.q = searchTerm;
       if (jobTypeFilter !== "all") params.jobType = jobTypeFilter;
       if (statusFilter !== "all") params.status = statusFilter;
 
       const response = await Axios.get<ApiResponse<ListJobResponse>>(
-        `${env.BACKEND_BASE_URL}/api/jobs`,
+        `${env.BACKEND_BASE_URL}/api/jobs/admin`,
         { params }
       );
 
@@ -70,19 +72,18 @@ export default function JobPostingsPage() {
         setTotal(response.data.data.total);
 
         // Calculate stats
-        const allResponse = await Axios.get<ApiResponse<ListJobResponse>>(
-          `${env.BACKEND_BASE_URL}/api/jobs`,
-          { params: { limit: 1000 } }
+        const allResponse = await Axios.get<ApiResponse<JobStatsResponse>>(
+          `${env.BACKEND_BASE_URL}/api/jobs/stats`
         );
 
         if (allResponse.data.success && allResponse.data.data) {
-          const allJobs = allResponse.data.data.data;
+          const allJobs = allResponse.data.data;
           setStats({
-            total: allJobs.length,
-            active: allJobs.filter((j) => j.status === "active").length,
-            internships: allJobs.filter((j) => j.jobType === "internship")
-              .length,
-            fullTime: allJobs.filter((j) => j.jobType === "full_time").length,
+            total: allJobs.totalJobs,
+            active: allJobs.activeJobs,
+            closed: allJobs.closedJobs,
+            draft: allJobs.draftJobs,
+            archived: allJobs.archivedJobs,
           });
         }
       } else {
@@ -181,9 +182,9 @@ export default function JobPostingsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Internships
+                  Draft
                 </p>
-                <p className="text-2xl font-bold">{stats.internships}</p>
+                <p className="text-2xl font-bold">{stats.draft}</p>
               </div>
             </div>
           </div>
@@ -195,9 +196,9 @@ export default function JobPostingsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Full Time
+                  Closed
                 </p>
-                <p className="text-2xl font-bold">{stats.fullTime}</p>
+                <p className="text-2xl font-bold">{stats.closed}</p>
               </div>
             </div>
           </div>

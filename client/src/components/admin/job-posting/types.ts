@@ -69,6 +69,14 @@ export interface ListJobResponse {
   limit: number;
 }
 
+export interface JobStatsResponse {
+  totalJobs: number;
+  activeJobs: number;
+  closedJobs: number;
+  draftJobs: number;
+  archivedJobs: number;
+}
+
 export interface ApiResponse<T> {
   statusCode?: number;
   data?: T;
