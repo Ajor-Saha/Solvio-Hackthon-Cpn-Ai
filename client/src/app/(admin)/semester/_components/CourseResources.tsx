@@ -454,7 +454,7 @@ const CourseResources = ({ courseId }: CourseResourcesProps) => {
     setGeneratedQuiz(null);
     setTakingQuiz(null);
     setQuizCompleted(false);
-    
+
     // Scroll to quiz section
     setTimeout(() => {
       document.getElementById('quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
