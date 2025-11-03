@@ -6,6 +6,7 @@ import logger from 'morgan';
 
 import ai_router from './routes/ai-route';
 import user_router from './routes/auth-route';
+import competition_router from './routes/competition-route';
 import courseResource_router from './routes/course-resource-route';
 import course_router from './routes/course-route';
 import department_router from './routes/department-route';
@@ -70,6 +71,9 @@ app.use('/api/jobs', jobpost_router);
 
 // AI Assistant routes
 app.use('/api/ai', ai_router);
+
+// Competition routes
+app.use('/api/competitions', competition_router);
 
 // Health check route
 app.get('/', (req, res) => {
