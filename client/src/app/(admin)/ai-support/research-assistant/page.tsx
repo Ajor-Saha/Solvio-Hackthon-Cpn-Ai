@@ -4,19 +4,25 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import useAuthStore from "@/store/store";
 import {
   BookOpen,
   Bot,
-  Calculator,
-  Code,
-  Globe,
+  Download,
+  File,
+  FileCheck,
+  FileText,
   Lightbulb,
   MessageSquare,
+  Search,
   Send,
   Sparkles,
-  User
+  Trash2,
+  Upload,
+  User,
+  X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -26,38 +32,51 @@ interface Message {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  sources?: string[]; // Referenced papers for this response
+}
+
+interface UploadedDocument {
+  id: string;
+  name: string;
+  size: number;
+  uploadedAt: Date;
+  status: 'processing' | 'ready' | 'error';
+  pageCount?: number;
 }
 
 const suggestedPrompts = [
   {
+    icon: <Search className="w-4 h-4" />,
+    title: "Summarize paper",
+    prompt: "Can you provide a summary of the key findings in my uploaded research papers?"
+  },
+  {
     icon: <BookOpen className="w-4 h-4" />,
-    title: "Explain a concept",
-    prompt: "Can you explain a difficult concept from my recent lessons?"
+    title: "Methodology",
+    prompt: "What research methodologies are used in the uploaded papers?"
   },
   {
-    icon: <Code className="w-4 h-4" />,
-    title: "Quiz help",
-    prompt: "Help me understand where I went wrong in my recent quizzes"
+    icon: <Lightbulb className="w-4 h-4" />,
+    title: "Key insights",
+    prompt: "What are the main contributions and innovations in these papers?"
   },
   {
-    icon: <Calculator className="w-4 h-4" />,
-    title: "Study guidance",
-    prompt: "Based on my performance, what should I focus on studying next?"
-  },
-  {
-    icon: <Globe className="w-4 h-4" />,
-    title: "Learning progress",
-    prompt: "How am I performing across my subjects? Any weak areas?"
+    icon: <FileText className="w-4 h-4" />,
+    title: "Compare research",
+    prompt: "Can you compare the approaches used in different papers?"
   }
 ];
 
-export default function AITutorPage() {
+export default function ResearchAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
 
   const scrollToBottom = () => {
@@ -67,6 +86,70 @@ export default function AITutorPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(file =>
+      file.type === 'application/pdf' ||
+      file.name.endsWith('.pdf')
+    );
+
+    if (validFiles.length === 0) {
+      alert('Please upload PDF files only');
+      return;
+    }
+
+    // Simulate file upload and processing
+    validFiles.forEach(file => {
+      const newDoc: UploadedDocument = {
+        id: Date.now().toString() + Math.random(),
+        name: file.name,
+        size: file.size,
+        uploadedAt: new Date(),
+        status: 'processing',
+      };
+
+      setUploadedDocuments(prev => [...prev, newDoc]);
+
+      // Simulate processing
+      setTimeout(() => {
+        setUploadedDocuments(prev =>
+          prev.map(doc =>
+            doc.id === newDoc.id
+              ? { ...doc, status: 'ready', pageCount: Math.floor(Math.random() * 20) + 5 }
+              : doc
+          )
+        );
+      }, 2000);
+    });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
+  const handleDeleteDocument = (docId: string) => {
+    setUploadedDocuments(prev => prev.filter(doc => doc.id !== docId));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -82,21 +165,114 @@ export default function AITutorPage() {
     setInputValue("");
     setIsLoading(true);
 
-    // Simulate AI response for demo
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Thank you for your question! This is a demo AI Tutor interface. The backend AI integration is currently being developed. Once connected, I'll be able to provide personalized learning assistance based on your course data and performance.",
-        role: 'assistant',
-        timestamp: new Date()
-      };
+    // Create a placeholder message for streaming
+    const aiMessageId = (Date.now() + 1).toString();
+    const hasDocuments = uploadedDocuments.filter(doc => doc.status === 'ready').length > 0;
+    const sources = hasDocuments ? uploadedDocuments.slice(0, 2).map(doc => doc.name) : undefined;
 
-      setMessages(prev => [...prev, aiMessage]);
+    const aiMessage: Message = {
+      id: aiMessageId,
+      content: '',
+      role: 'assistant',
+      timestamp: new Date(),
+      sources: sources
+    };
+
+    setMessages(prev => [...prev, aiMessage]);
+
+    try {
+      // Use fetch for SSE streaming
+      const accessToken = useAuthStore.getState().accessToken;
+
+      const response = await fetch('http://localhost:8000/api/ai/research-assistant/chat-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          conversationHistory: messages.slice(-5).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('No reader available');
+      }
+
+      let accumulatedText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+
+            try {
+              const parsed = JSON.parse(data);
+
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+
+              if (parsed.text) {
+                accumulatedText += parsed.text;
+
+                // Update the message with accumulated text
+                setMessages(prev => prev.map(msg =>
+                  msg.id === aiMessageId
+                    ? { ...msg, content: accumulatedText }
+                    : msg
+                ));
+              }
+
+              if (parsed.done) {
+                console.log('✅ Streaming complete');
+              }
+            } catch (parseError) {
+              // Ignore parse errors for incomplete JSON
+              if (data !== '') {
+                console.warn('Failed to parse SSE data:', data);
+              }
+            }
+          }
+        }
+      }
+
       setIsLoading(false);
-    }, 1000);
-  };
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      setIsLoading(false);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+      // Update the placeholder message with error
+      setMessages(prev => prev.map(msg =>
+        msg.id === aiMessageId
+          ? {
+              ...msg,
+              content: `Sorry, I encountered an error: ${error.message || 'Failed to get response'}. Please try again.`
+            }
+          : msg
+      ));
+    }
+  };  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -113,62 +289,61 @@ export default function AITutorPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+    <div className="flex h-screen">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                Research Assistant - RAG Chatbot
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Upload papers and ask questions about your research
+              </p>
+            </div>
+            <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400">
+              <Sparkles className="w-3 h-3 mr-1" />
+              Demo Mode
+            </Badge>
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              AI Tutor - Research Assistant
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Your personalized learning assistant
-            </p>
-          </div>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-            <Sparkles className="w-3 h-3 mr-1" />
-            Demo Mode
-          </Badge>
         </div>
-      </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-950">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center max-w-2xl mx-auto">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mb-6">
-                <Bot className="w-10 h-10 text-white" />
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-6">
+                <FileText className="w-10 h-10 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Hello {user?.firstName}! 👋
+                Welcome to Research Assistant
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-2">
-                I'm your AI Tutor, ready to assist with your learning journey.
+                Upload your research papers and I'll help you understand, analyze, and extract insights from them.
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-                I can help you understand concepts, explain quiz results, suggest study plans, and answer your questions.
-              </p>
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
                 {suggestedPrompts.map((suggestion, index) => (
                   <Card
                     key={index}
-                    className="p-4 hover:shadow-md transition-all cursor-pointer border-dashed border-2 hover:border-purple-300 dark:hover:border-purple-600"
+                    className="p-4 hover:shadow-md transition-all cursor-pointer border-2 hover:border-indigo-300 dark:hover:border-indigo-600 group"
                     onClick={() => handleSuggestedPrompt(suggestion.prompt)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
                         {suggestion.icon}
                       </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-1">
                           {suggestion.title}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                           {suggestion.prompt}
                         </p>
                       </div>
@@ -176,6 +351,15 @@ export default function AITutorPage() {
                   </Card>
                 ))}
               </div>
+
+              {uploadedDocuments.length === 0 && (
+                <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-sm text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Upload research papers from the sidebar to get started →
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="max-w-4xl mx-auto space-y-6">
@@ -185,7 +369,7 @@ export default function AITutorPage() {
                     <AvatarFallback className={`${
                       message.role === 'user'
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                        : 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
+                        : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
                     }`}>
                       {message.role === 'user' ? (
                         <User className="w-4 h-4" />
@@ -198,7 +382,7 @@ export default function AITutorPage() {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                        {message.role === 'user' ? (user?.firstName || 'You') : 'AI Tutor'}
+                        {message.role === 'user' ? (user?.firstName || 'You') : 'Research Assistant'}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {formatTime(message.timestamp)}
@@ -208,93 +392,112 @@ export default function AITutorPage() {
                     <div className={`p-4 rounded-lg ${
                       message.role === 'user'
                         ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                        : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+                        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                     }`}>
                       {message.role === 'user' ? (
                         <div className="text-sm text-gray-700 dark:text-gray-300">
                           {message.content}
                         </div>
                       ) : (
-                        <div className="prose dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700">
-                          <ReactMarkdown
-                            components={{
-                              h1: ({ children }) => (
-                                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 mt-4">
-                                  {children}
-                                </h1>
-                              ),
-                              h2: ({ children }) => (
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 mt-3">
-                                  {children}
-                                </h2>
-                              ),
-                              h3: ({ children }) => (
-                                <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-2 mt-3">
-                                  {children}
-                                </h3>
-                              ),
-                              p: ({ children }) => (
-                                <p className="text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">
-                                  {children}
-                                </p>
-                              ),
-                              ul: ({ children }) => (
-                                <ul className="list-disc list-inside space-y-1 mb-3 text-gray-700 dark:text-gray-300">
-                                  {children}
-                                </ul>
-                              ),
-                              ol: ({ children }) => (
-                                <ol className="list-decimal list-inside space-y-1 mb-3 text-gray-700 dark:text-gray-300">
-                                  {children}
-                                </ol>
-                              ),
-                              li: ({ children }) => (
-                                <li className="text-gray-700 dark:text-gray-300">
-                                  {children}
-                                </li>
-                              ),
-                              code: ({ children, className }) => {
-                                const isInline = !className;
-                                return isInline ? (
-                                  <code className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded text-sm font-mono">
+                        <>
+                          <div className="prose dark:prose-invert max-w-none prose-sm">
+                            <ReactMarkdown
+                              components={{
+                                h1: ({ children }) => (
+                                  <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 mt-3">
                                     {children}
-                                  </code>
-                                ) : (
-                                  <code className={className}>
+                                  </h1>
+                                ),
+                                h2: ({ children }) => (
+                                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 mt-2">
                                     {children}
-                                  </code>
-                                );
-                              },
-                              pre: ({ children }) => (
-                                <pre className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-3 overflow-x-auto">
-                                  {children}
-                                </pre>
-                              ),
-                              blockquote: ({ children }) => (
-                                <blockquote className="border-l-4 border-purple-500 pl-3 py-1 mb-3 bg-purple-50 dark:bg-purple-900/20 text-gray-700 dark:text-gray-300 italic">
-                                  {children}
-                                </blockquote>
-                              ),
-                              strong: ({ children }) => (
-                                <strong className="font-semibold text-gray-900 dark:text-gray-100">
-                                  {children}
-                                </strong>
-                              ),
-                              em: ({ children }) => (
-                                <em className="italic text-gray-700 dark:text-gray-300">
-                                  {children}
-                                </em>
-                              ),
-                            }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
+                                  </h2>
+                                ),
+                                p: ({ children }) => (
+                                  <p className="text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">
+                                    {children}
+                                  </p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="list-disc list-inside space-y-1 mb-2 text-gray-700 dark:text-gray-300">
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="list-decimal list-inside space-y-1 mb-2 text-gray-700 dark:text-gray-300">
+                                    {children}
+                                  </ol>
+                                ),
+                                code: ({ children, className }) => {
+                                  const isInline = !className;
+                                  return isInline ? (
+                                    <code className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded text-sm font-mono">
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <code className={className}>{children}</code>
+                                  );
+                                },
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold text-gray-900 dark:text-gray-100">
+                                    {children}
+                                  </strong>
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+
+                          {message.sources && message.sources.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex items-start gap-2">
+                                <FileCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5" />
+                                <div className="flex-1">
+                                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Referenced Sources:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {message.sources.map((source, idx) => (
+                                      <Badge key={idx} variant="outline" className="text-xs">
+                                        {source}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
                 </div>
               ))}
+
+              {isLoading && (
+                <div className="flex gap-4">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
+                    <AvatarFallback className="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">
+                      <Bot className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          Analyzing documents...
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -310,15 +513,19 @@ export default function AITutorPage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask me about your learning progress, quiz results, or any study questions..."
-                  className="min-h-[50px] max-h-[150px] resize-none pr-12 border-gray-300 dark:border-gray-600 focus:border-purple-500 dark:focus:border-purple-400"
+                  placeholder={
+                    uploadedDocuments.filter(d => d.status === 'ready').length > 0
+                      ? "Ask me anything about your research papers..."
+                      : "Upload research papers first, then ask questions..."
+                  }
+                  className="min-h-[60px] max-h-[150px] resize-none pr-12 border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400"
                   disabled={isLoading}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
                   size="sm"
-                  className="absolute right-2 bottom-2 h-8 w-8 p-0 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                  className="absolute right-2 bottom-2 h-9 w-9 p-0 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-600"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -336,14 +543,184 @@ export default function AITutorPage() {
                   <span>{messages.length} messages</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Demo AI</span>
+                  <FileText className="w-3 h-3" />
+                  <span>{uploadedDocuments.filter(d => d.status === 'ready').length} papers</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Right Sidebar - Document Upload & Management */}
+      <div className="w-96 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Research Papers
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {uploadedDocuments.length} document{uploadedDocuments.length !== 1 ? 's' : ''} uploaded
+          </p>
+        </div>
+
+        {/* Upload Area */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+              isDragging
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500'
+            }`}
+          >
+            <Upload className="w-10 h-10 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Drop PDF files here
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              or click to browse
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              multiple
+              onChange={(e) => handleFileUpload(e.target.files)}
+              className="hidden"
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              size="sm"
+              variant="outline"
+              className="text-xs"
+            >
+              <Upload className="w-3 h-3 mr-1" />
+              Choose Files
+            </Button>
+          </div>
+        </div>
+
+        {/* Documents List */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-3">
+            {uploadedDocuments.length === 0 ? (
+              <div className="text-center py-8">
+                <File className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No documents uploaded yet
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Upload PDF research papers to start
+                </p>
+              </div>
+            ) : (
+              uploadedDocuments.map((doc) => (
+                <Card key={doc.id} className="p-3 hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg flex-shrink-0 ${
+                      doc.status === 'ready'
+                        ? 'bg-green-100 dark:bg-green-900/20'
+                        : doc.status === 'processing'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/20'
+                        : 'bg-red-100 dark:bg-red-900/20'
+                    }`}>
+                      {doc.status === 'ready' ? (
+                        <FileCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      ) : doc.status === 'processing' ? (
+                        <Upload className="w-4 h-4 text-yellow-600 dark:text-yellow-400 animate-pulse" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {doc.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatFileSize(doc.size)}
+                        </span>
+                        {doc.pageCount && (
+                          <>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {doc.pageCount} pages
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs mt-2 ${
+                          doc.status === 'ready'
+                            ? 'border-green-300 text-green-700 dark:border-green-700 dark:text-green-400'
+                            : doc.status === 'processing'
+                            ? 'border-yellow-300 text-yellow-700 dark:border-yellow-700 dark:text-yellow-400'
+                            : 'border-red-300 text-red-700 dark:border-red-700 dark:text-red-400'
+                        }`}
+                      >
+                        {doc.status === 'ready' ? 'Ready' : doc.status === 'processing' ? 'Processing...' : 'Error'}
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      {doc.status === 'ready' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                          title="Download"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Sidebar Footer */}
+        {uploadedDocuments.length > 0 && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3">
+              <p className="text-xs text-indigo-800 dark:text-indigo-200 font-medium mb-1">
+                💡 Tips for better results:
+              </p>
+              <ul className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
+                <li>• Upload multiple papers to compare findings</li>
+                <li>• Ask specific questions about methodologies</li>
+                <li>• Request summaries of key contributions</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        multiple
+        onChange={(e) => handleFileUpload(e.target.files)}
+        className="hidden"
+      />
     </div>
   );
 }

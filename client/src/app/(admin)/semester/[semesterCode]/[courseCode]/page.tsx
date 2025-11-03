@@ -1,6 +1,6 @@
 "use client";
 
-import { CourseProjects, CourseResources } from "@/app/(admin)/semester/_components";
+import { CourseProjects, CourseResearch, CourseResources } from "@/app/(admin)/semester/_components";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -377,27 +377,8 @@ const CoursePage = () => {
           {/* Research Tab */}
           <TabsContent value="research" className="mt-0">
             <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                    <Lightbulb className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Research</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Research papers, studies, and academic work
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Lightbulb className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">No research available</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500">
-                      Research content will be displayed here
-                    </p>
-                  </div>
-                </div>
+              <CardContent className="p-6 md:p-8">
+                {course && <CourseResearch courseId={course.courseId} />}
               </CardContent>
             </Card>
           </TabsContent>

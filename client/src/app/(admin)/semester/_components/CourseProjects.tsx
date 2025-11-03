@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Axios } from "@/config/axios";
 import useAuthStore from "@/store/store";
 import {
+  ArrowRight,
   Calendar,
   Clock,
   ExternalLink,
@@ -15,6 +16,7 @@ import {
   Plus,
   Users,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateProjectForm from "./CreateProjectForm";
@@ -46,6 +48,7 @@ interface CourseProjectsProps {
 
 export default function CourseProjects({ courseId }: CourseProjectsProps) {
   const { user, accessToken } = useAuthStore();
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -184,12 +187,14 @@ export default function CourseProjects({ courseId }: CourseProjectsProps) {
           {projects.map((project) => (
             <Card
               key={project.projectId}
-              className="hover:shadow-lg transition-shadow duration-200"
+              className="hover:shadow-lg transition-shadow duration-200 cursor-pointer group"
+              onClick={() => router.push(`/semester/project/${project.projectId}`)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg line-clamp-2">
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-2">
                     {project.title}
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </CardTitle>
                   <Badge
                     className={`${getStatusColor(project.status)} flex items-center gap-1`}
