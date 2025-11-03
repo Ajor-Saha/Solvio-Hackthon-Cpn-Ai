@@ -81,14 +81,14 @@ export default function EducationalHeroSection() {
             variants={fadeInUp}
             className="text-6xl md:text-8xl font-bold mb-8 text-slate-900 dark:text-white tracking-tight"
           >
-            StudyFlow
+            CPN AI
           </motion.h1>
 
           <motion.div
             variants={fadeInUp}
             className="text-3xl md:text-5xl font-light text-slate-600 dark:text-slate-300 mb-12 tracking-wide"
           >
-            Intelligent Learning Analytics
+            AI-Powered Campus Projects & Proof Network
           </motion.div>
 
           {/* Subtitle */}
