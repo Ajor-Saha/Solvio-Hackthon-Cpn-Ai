@@ -15,8 +15,10 @@ export * from './tbl-research-student';
 // Supervision & Collaboration
 export * from './tbl-supervision';
 
-// Job Postings & Competitions
+// Announcements & Opportunities
+export * from './tbl-achievement';
 export * from './tbl-competition';
+export * from './tbl-higher-study';
 export * from './tbl-job-posting';
 
 // Discovery & Showcase

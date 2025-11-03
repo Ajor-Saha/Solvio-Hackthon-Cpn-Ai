@@ -6,16 +6,19 @@ import logger from 'morgan';
 
 import ai_router from './routes/ai-route';
 import user_router from './routes/auth-route';
-import competition_router from './routes/competition-route';
 import courseResource_router from './routes/course-resource-route';
 import course_router from './routes/course-route';
 import department_router from './routes/department-route';
 import institution_router from './routes/institution-route';
-import jobpost_router from './routes/jobsposting-routes';
 import project_router from './routes/project-route';
-import research_router from './routes/research-route';
-import showcase_router from './routes/showcase-route';
 import userManagement_router from './routes/user-management-route';
+
+// New 5 announcement category routes
+import achievementRouter from './routes/achievement-routes';
+import competitionRouter from './routes/competition-routes';
+import higherStudyRouter from './routes/higher-study-routes';
+import jobRouter from './routes/job-routes';
+import researchRouter from './routes/research-routes';
 
 dotenv.config();
 
@@ -60,20 +63,18 @@ app.use('/api/course-resource', courseResource_router);
 // Project routes
 app.use('/api/project', project_router);
 
-// Research routes
-app.use('/api/research', research_router);
-
-// Department Showcases routes
-app.use('/api/showcases', showcase_router);
-
-// Job Postings routes
-app.use('/api/jobs', jobpost_router);
+// New 5 announcement category routes
+app.use('/api/achievements', achievementRouter);
+app.use('/api/competitions', competitionRouter);
+app.use('/api/higher-studies', higherStudyRouter);
+app.use('/api/jobs', jobRouter);
+app.use('/api/research', researchRouter);
+// End announcement routes
 
 // AI Assistant routes
 app.use('/api/ai', ai_router);
 
-// Competition routes
-app.use('/api/competitions', competition_router);
+// (legacy competition routes removed in favor of announcement routes above)
 
 // Health check route
 app.get('/', (req, res) => {
