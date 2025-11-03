@@ -1,7 +1,6 @@
-
 "use client";
 
-import CourseResources from "@/app/(admin)/semester/_components/CourseResources";
+import { CourseProjects, CourseResources } from "@/app/(admin)/semester/_components";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,7 +94,7 @@ const CoursePage = () => {
     const fetchEnrollments = async (courseId: string) => {
       try {
         setIsLoadingEnrollments(true);
-        const response = await Axios.get(`/api/course/${courseId}/enrollments`, {
+        const response = await Axios.get(`/api/course/enrollments/${courseId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -369,27 +368,8 @@ const CoursePage = () => {
           {/* Project Tab */}
           <TabsContent value="project" className="mt-0">
             <Card className="border-0 shadow-lg bg-white dark:bg-gray-900">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                    <Folder className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Project</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Course projects, assignments, and submissions
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Folder className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">No projects available</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500">
-                      Project information will be displayed here
-                    </p>
-                  </div>
-                </div>
+              <CardContent className="p-6 md:p-8">
+                {course && <CourseProjects courseId={course.courseId} />}
               </CardContent>
             </Card>
           </TabsContent>

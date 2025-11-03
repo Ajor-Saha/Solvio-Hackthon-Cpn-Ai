@@ -10,6 +10,7 @@ import course_router from './routes/course-route';
 import department_router from './routes/department-route';
 import institution_router from './routes/institution-route';
 import jobpost_router from './routes/jobsposting-routes';
+import project_router from './routes/project-route';
 import showcase_router from './routes/showcase-route';
 import userManagement_router from './routes/user-management-route';
 
@@ -52,6 +53,9 @@ app.use('/api/course', course_router);
 
 // Course resource routes
 app.use('/api/course-resource', courseResource_router);
+
+// Project routes
+app.use('/api/project', project_router);
 
 // Department Showcases routes
 app.use('/api/showcases', showcase_router);
