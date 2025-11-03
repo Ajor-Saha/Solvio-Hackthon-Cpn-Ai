@@ -1,532 +1,478 @@
-import { count, desc } from 'drizzle-orm';
-import {
-  and,
-  eq,
-  gte,
-  ilike,
-  isNull,
-} from 'drizzle-orm/sql/expressions/conditions';
+import { and, count, desc, eq, ilike, isNull, or, sql, SQL } from 'drizzle-orm';
 import { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { db } from '../db';
 import { competitionTable } from '../db/schema';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
+
 /**
  * POST /api/competitions
- * Create a new competition posting (Admin/Faculty only)
- * Required: title, description, type, externalUrl
- * Optional: organizerName, location, eventDate, registrationDeadline, bannerUrl, status (draft/active)
- * Flow: Validate input → Generate competitionId → Set postedAt if status='active' → Insert into DB
- * Success: { competitionId, title, status, postedAt? }
+ * Create new competition (admin/faculty only)
  */
-export const createCompetition = asyncHandler(
-  async (req: Request, res: Response) => {
+export const createCompetition = asyncHandler(async (req: Request, res: Response) => {
+  try {
     let {
       title,
       description,
-      type,
-      externalUrl,
+      type = 'other',
       organizerName,
       location,
       eventDate,
       registrationDeadline,
+      externalUrl,
       bannerUrl,
-      status,
+      status = 'draft',
     } = req.body;
 
     const user = req.user;
 
-    if (
-      !user ||
-      (user.role !== 'department_admin' && user.role !== 'faculty')
-    ) {
+    if (!user?.role || !['department_admin', 'faculty'].includes(user.role)) {
       return res
         .status(403)
-        .json(
-          new ApiResponse(403, null, 'Forbidden: Insufficient permissions')
-        );
+        .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
     }
 
-    // trim inputs
+    // Sanitize inputs
     title = title?.trim();
     description = description?.trim();
-    type = type?.trim();
-    externalUrl = externalUrl?.trim();
     organizerName = organizerName?.trim();
     location = location?.trim();
-    bannerUrl = bannerUrl?.trim();
-    eventDate = eventDate?.trim();
-    registrationDeadline = registrationDeadline?.trim();
-    status = status?.trim();
+    type = type?.toLowerCase();
+    status = status?.toLowerCase();
 
-    // Input validation (simplified)
-    if (!title || !description || !type || !externalUrl) {
+    if (!title || !description || !externalUrl) {
       return res
         .status(400)
-        .json({ success: false, message: 'Missing required fields' });
+        .json(new ApiResponse(400, null, 'Title, description, and external URL are required'));
     }
 
-    const validStatuses = ['draft', 'active'];
-    if (status && !validStatuses.includes(status)) {
+    const validTypes = ['hackathon', 'debate', 'datathon', 'programming_contest', 'math_competition', 'quiz', 'case_study', 'design_challenge', 'other'];
+    if (!validTypes.includes(type)) {
       return res
         .status(400)
-        .json({ success: false, message: 'Invalid status value' });
+        .json(new ApiResponse(400, null, 'Invalid competition type'));
     }
+
+    const validStatuses = ['draft', 'active', 'closed', 'archived'];
+    if (!validStatuses.includes(status)) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, 'Invalid status'));
+    }
+
     const newCompetition = {
       competitionId: uuid(),
+      departmentId: user.departmentId!,
+      postedBy: user.userId,
       title,
       description,
       type,
-      externalUrl,
       organizerName: organizerName || null,
       location: location || null,
-      // eventDate is timestamp column - keep as Date object
       eventDate: eventDate ? new Date(eventDate) : null,
-      // registrationDeadline is date column - convert to ISO date string (YYYY-MM-DD)
-      registrationDeadline: registrationDeadline
-        ? new Date(registrationDeadline).toISOString().split('T')[0]
-        : null,
+      registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
+      externalUrl,
       bannerUrl: bannerUrl || null,
-      status: status || 'draft',
-      departmentId: user?.departmentId || null,
-      postedBy: user?.userId || null,
-      // postedAt is timestamp column - keep as Date object
+      status,
       postedAt: status === 'active' ? new Date() : null,
     };
 
-    const [competition] = await db
+    const [createdCompetition] = await db
       .insert(competitionTable)
       .values(newCompetition)
-      .returning({
-        competitionId: competitionTable.competitionId,
-        title: competitionTable.title,
-        status: competitionTable.status,
-        postedAt: competitionTable.postedAt,
-        description: competitionTable.description,
-        type: competitionTable.type,
-        externalUrl: competitionTable.externalUrl,
-        organizerName: competitionTable.organizerName,
-        location: competitionTable.location,
-        eventDate: competitionTable.eventDate,
-        registrationDeadline: competitionTable.registrationDeadline,
-        bannerUrl: competitionTable.bannerUrl,
-      });
+      .returning();
 
-    // return created competition and mark response to avoid unused-variable lint/error
     return res
       .status(201)
-      .json(
-        new ApiResponse(201, competition, 'Competition created successfully')
-      );
+      .json(new ApiResponse(201, createdCompetition, 'Competition created successfully'));
+  } catch (error) {
+    console.error('Error creating competition:', error);
+    res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
   }
-);
+});
 
 /**
  * PUT /api/competitions/:competitionId
- * Update existing competition (Admin/Faculty only)
- * Required: competitionId in URL
- * Optional: any updatable fields (title, description, type, etc.)
- * Flow: Check ownership (same dept) → Apply partial updates → Update updatedAt
- * Success: { competitionId, updatedAt, updated fields }
+ * Update competition (admin/faculty owner only)
  */
-
-export const updateCompetition = asyncHandler(
-  async (req: Request, res: Response) => {
+export const updateCompetition = asyncHandler(async (req: Request, res: Response) => {
+  try {
     const { competitionId } = req.params;
-    const {
-      title,
-      description,
-      type,
-      externalUrl,
-      organizerName,
-      location,
-      eventDate,
-      registrationDeadline,
-      bannerUrl,
-      status,
-    } = req.body;
-
     const user = req.user;
 
-    if (
-      !user ||
-      (user.role !== 'department_admin' && user.role !== 'faculty')
-    ) {
+    if (!user?.role || !['department_admin', 'faculty'].includes(user.role)) {
       return res
         .status(403)
-        .json(
-          new ApiResponse(403, null, 'Forbidden: Insufficient permissions')
-        );
+        .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
     }
 
-    const competition = await db
+    // Check if competition exists and user owns it
+    const existingCompetition = await db
       .select()
       .from(competitionTable)
       .where(
         and(
           eq(competitionTable.competitionId, competitionId),
-          eq(competitionTable.postedBy, user.userId),
           isNull(competitionTable.deletedAt)
         )
-      )
-      .limit(1)
-      .then(rows => rows[0]);
+      );
 
-    if (!competition) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, 'Competition not found'));
+    if (existingCompetition.length === 0) {
+      return res.status(404).json(new ApiResponse(404, null, 'Competition not found'));
     }
 
-    const updatedFields: any = {};
+    if (user.role !== 'department_admin' && existingCompetition[0].postedBy !== user.userId) {
+      return res
+        .status(403)
+        .json(new ApiResponse(403, null, 'You can only edit your own competitions'));
+    }
 
-    if (title !== undefined) updatedFields.title = title.trim();
-    if (description !== undefined)
-      updatedFields.description = description.trim();
-    if (type !== undefined) updatedFields.type = type.trim();
-    if (externalUrl !== undefined)
-      updatedFields.externalUrl = externalUrl.trim();
-    if (organizerName !== undefined)
-      updatedFields.organizerName = organizerName.trim() || null;
-    if (location !== undefined)
-      updatedFields.location = location.trim() || null;
-    if (eventDate !== undefined)
-      updatedFields.eventDate = eventDate ? new Date(eventDate) : null;
-    if (registrationDeadline !== undefined)
-      updatedFields.registrationDeadline = registrationDeadline
-        ? new Date(registrationDeadline).toISOString().split('T')[0]
-        : null;
-    if (bannerUrl !== undefined)
-      updatedFields.bannerUrl = bannerUrl.trim() || null;
+    const updateData: any = {};
+    const { title, description, type, organizerName, location, eventDate, registrationDeadline, externalUrl, bannerUrl, status } = req.body;
+
+    if (title !== undefined) updateData.title = title.trim();
+    if (description !== undefined) updateData.description = description.trim();
+    if (type !== undefined) updateData.type = type.toLowerCase();
+    if (organizerName !== undefined) updateData.organizerName = organizerName.trim() || null;
+    if (location !== undefined) updateData.location = location.trim() || null;
+    if (eventDate !== undefined) updateData.eventDate = eventDate ? new Date(eventDate) : null;
+    if (registrationDeadline !== undefined) updateData.registrationDeadline = registrationDeadline ? new Date(registrationDeadline) : null;
+    if (externalUrl !== undefined) updateData.externalUrl = externalUrl;
+    if (bannerUrl !== undefined) updateData.bannerUrl = bannerUrl || null;
     if (status !== undefined) {
-      const validStatuses = ['draft', 'active', 'closed', 'archived'];
-      if (!validStatuses.includes(status.trim())) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'Invalid status value' });
-      }
-      updatedFields.status = status.trim();
-      if (status.trim() === 'active' && !competition.postedAt) {
-        updatedFields.postedAt = new Date();
+      updateData.status = status.toLowerCase();
+      if (status === 'active' && !existingCompetition[0].postedAt) {
+        updateData.postedAt = new Date();
       }
     }
-
-    if (Object.keys(updatedFields).length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'No fields to update' });
-    }
-
-    updatedFields.updatedAt = new Date();
 
     const [updatedCompetition] = await db
       .update(competitionTable)
-      .set(updatedFields)
+      .set(updateData)
       .where(eq(competitionTable.competitionId, competitionId))
-      .returning({
-        competitionId: competitionTable.competitionId,
-        title: competitionTable.title,
-        description: competitionTable.description,
-        type: competitionTable.type,
-        externalUrl: competitionTable.externalUrl,
-        organizerName: competitionTable.organizerName,
-        location: competitionTable.location,
-        eventDate: competitionTable.eventDate,
-        registrationDeadline: competitionTable.registrationDeadline,
-        bannerUrl: competitionTable.bannerUrl,
-        status: competitionTable.status,
-        updatedAt: competitionTable.updatedAt,
-      });
-
-    if (!updatedCompetition) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, 'Competition not found'));
-    }
+      .returning();
 
     return res
       .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          updatedCompetition,
-          'Competition updated successfully'
-        )
-      );
+      .json(new ApiResponse(200, updatedCompetition, 'Competition updated successfully'));
+  } catch (error) {
+    console.error('Error updating competition:', error);
+    res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
   }
-);
+});
 
 /**
  * GET /api/competitions
- * List active competitions (Public/Student)
- * Query: ?type=hackathon&upcoming=true&location=online&page=1&limit=10
- * Required: none
- * Flow: Filter by status='active', deletedAt=null, registrationDeadline >= today → Paginate → Return list
- * Success: { data: [competition[]], total, page, limit, filtersApplied }
+ * List competitions (public/students see active only, admins see all)
  */
-export const listCompetitions = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { q, type, upcoming, location, page = '1', limit = '10' } = req.query;
-    const pageNum = parseInt(page as string, 10) || 1;
-    const limitNum = Math.min(parseInt(limit as string, 10) || 10, 100);
-    const offset = (pageNum - 1) * limitNum;
+export const listCompetitions = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    type,
+    location,
+    upcoming,
+    search,
+    page = '1',
+    limit = '10',
+    status = 'active',
+  } = req.query;
 
-    const filters: any = [
-      eq(competitionTable.status, 'active'),
-      isNull(competitionTable.deletedAt),
-    ];
+  const pageNum = parseInt(page as string, 10) || 1;
+  const limitNum = Math.min(parseInt(limit as string, 10) || 10, 50);
+  const offset = (pageNum - 1) * limitNum;
 
-    if (type) {
-      filters.push(eq(competitionTable.type, type as string));
+  const user = req.user;
+  const filtersCondition = [isNull(competitionTable.deletedAt)];
+
+  // Status filtering
+  if (!user || user.role === 'student') {
+    // Public/students see only active competitions
+    filtersCondition.push(eq(competitionTable.status, 'active'));
+    filtersCondition.push(
+      or(
+        isNull(competitionTable.registrationDeadline),
+        sql`${competitionTable.registrationDeadline} >= CURRENT_DATE` as SQL
+      )
+    );
+  } else if (user.role === 'department_admin') {
+    // Admin sees all in their department
+    filtersCondition.push(eq(competitionTable.departmentId, user.departmentId!));
+    if (status !== 'all') {
+      filtersCondition.push(eq(competitionTable.status, status as string));
     }
+  }
 
-    if (upcoming === 'true') {
-      filters.push(
-        gte(
-          competitionTable.registrationDeadline,
-          new Date().toISOString().split('T')[0]
-        )
-      );
-    }
-    if (location) {
-      filters.push(eq(competitionTable.location, location as string));
-    }
-    if (q) {
-      filters.push(ilike(competitionTable.title, `%${(q as string).trim()}%`));
-    }
-    const [totalResult] = await db
-      .select({ count: count(competitionTable.competitionId) })
-      .from(competitionTable)
-      .where(and(...filters));
+  // Additional filters
+  if (type) {
+    filtersCondition.push(eq(competitionTable.type, type as string));
+  }
+  if (location) {
+    filtersCondition.push(ilike(competitionTable.location, `%${location}%`));
+  }
+  if (upcoming === 'true') {
+    filtersCondition.push(
+      sql`${competitionTable.eventDate} >= CURRENT_DATE` as SQL
+    );
+  }
+  if (search) {
+    const searchCondition = or(
+      ilike(competitionTable.title, `%${search}%`),
+      ilike(competitionTable.description, `%${search}%`),
+      ilike(competitionTable.organizerName, `%${search}%`)
+    );
+    filtersCondition.push(searchCondition);
+  }
 
-    const total = Number(totalResult.count);
+  const whereClause = and(...filtersCondition);
 
-    const competitions = await db
+  const [totalResult, competitions] = await Promise.all([
+    db.select({ count: count() }).from(competitionTable).where(whereClause),
+    db
       .select()
       .from(competitionTable)
-      .where(and(...filters))
+      .where(whereClause)
       .orderBy(desc(competitionTable.postedAt))
       .limit(limitNum)
-      .offset(offset);
+      .offset(offset),
+  ]);
 
-    return res.status(200).json(
-      new ApiResponse(200, {
+  const total = Number(totalResult[0]?.count) || 0;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
         data: competitions,
         total,
         page: pageNum,
         limit: limitNum,
-        q: q || null,
-      })
-    );
-  }
-);
+        filtersApplied: { type, location, upcoming, search },
+      },
+      'Competitions fetched successfully'
+    )
+  );
+});
 
 /**
  * GET /api/competitions/:competitionId
- * Get single competition details (Public)
- * Required: competitionId
- * Flow: Find active, non-deleted competition → Return full details including banner, description
- * Success: full competition object
+ * Get competition details
  */
-export const getCompetitionDetailsByID = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { competitionId } = req.params;
-
-    const competition = await db
-      .select({
-        competitionId: competitionTable.competitionId,
-        title: competitionTable.title,
-        description: competitionTable.description,
-        type: competitionTable.type,
-        externalUrl: competitionTable.externalUrl,
-        organizerName: competitionTable.organizerName,
-        location: competitionTable.location,
-        eventDate: competitionTable.eventDate,
-        registrationDeadline: competitionTable.registrationDeadline,
-        bannerUrl: competitionTable.bannerUrl,
-        status: competitionTable.status,
-        postedAt: competitionTable.postedAt,
-        createdAt: competitionTable.createdAt,
-        updatedAt: competitionTable.updatedAt,
-      })
-      .from(competitionTable)
-      .where(
-        and(
-          eq(competitionTable.competitionId, competitionId),
-          eq(competitionTable.status, 'active'),
-          isNull(competitionTable.deletedAt)
-        )
-      )
-      .limit(1)
-      .then(rows => rows[0]);
-
-    if (!competition) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, 'Competition not found'));
-    }
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          competition,
-          'Competition details fetched successfully'
-        )
-      );
-  }
-);
-
-/**
- * DELETE /api/competitions/:competitionId
- * Soft delete competition (Admin/Faculty only)
- * Required: competitionId
- * Flow: Verify ownership → Set deletedAt = now() → Return deletion timestamp
- * Success: { success: true, deletedAt }
- */
-export const deleteCompetition = asyncHandler(
-  async (req: Request, res: Response) => {
+export const getCompetitionById = asyncHandler(async (req: Request, res: Response) => {
+  try {
     const { competitionId } = req.params;
     const user = req.user;
 
-    if (
-      !user ||
-      (user.role !== 'department_admin' && user.role !== 'faculty')
-    ) {
-      return res
-        .status(403)
-        .json(
-          new ApiResponse(403, null, 'Forbidden: Insufficient permissions')
-        );
+    const whereConditions = [
+      eq(competitionTable.competitionId, competitionId),
+      isNull(competitionTable.deletedAt),
+    ];
+
+    // Public users can only see active competitions
+    if (!user || user.role === 'student') {
+      whereConditions.push(eq(competitionTable.status, 'active'));
     }
 
     const competition = await db
       .select()
       .from(competitionTable)
+      .where(and(...whereConditions));
+
+    if (competition.length === 0) {
+      return res.status(404).json(new ApiResponse(404, null, 'Competition not found'));
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, competition[0], 'Competition details fetched successfully'));
+  } catch (error) {
+    console.error('Error fetching competition:', error);
+    res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+  }
+});
+
+/**
+ * DELETE /api/competitions/:competitionId
+ * Soft delete competition (admin/faculty owner only)
+ */
+export const deleteCompetition = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { competitionId } = req.params;
+    const user = req.user;
+
+    if (!user?.role || !['department_admin', 'faculty'].includes(user.role)) {
+      return res
+        .status(403)
+        .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
+    }
+
+    const existingCompetition = await db
+      .select()
+      .from(competitionTable)
       .where(
         and(
           eq(competitionTable.competitionId, competitionId),
-          eq(competitionTable.postedBy, user.userId),
           isNull(competitionTable.deletedAt)
         )
-      )
-      .limit(1)
-      .then(rows => rows[0]);
+      );
 
-    if (!competition) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, 'Competition not found'));
+    if (existingCompetition.length === 0) {
+      return res.status(404).json(new ApiResponse(404, null, 'Competition not found'));
     }
 
-    const deletedAt = new Date();
+    if (user.role !== 'department_admin' && existingCompetition[0].postedBy !== user.userId) {
+      return res
+        .status(403)
+        .json(new ApiResponse(403, null, 'You can only delete your own competitions'));
+    }
 
     await db
       .update(competitionTable)
-      .set({ deletedAt })
+      .set({ deletedAt: new Date() })
       .where(eq(competitionTable.competitionId, competitionId));
 
     return res
       .status(200)
-      .json(
-        new ApiResponse(200, { deletedAt }, 'Competition deleted successfully')
-      );
+      .json(new ApiResponse(200, { success: true }, 'Competition deleted successfully'));
+  } catch (error) {
+    console.error('Error deleting competition:', error);
+    res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
   }
-);
+});
+
+/**
+ * GET /api/competitions/admin/stats
+ * Get competition statistics (admin only)
+ */
+export const getCompetitionStats = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user?.role || user.role !== 'department_admin') {
+      return res
+        .status(403)
+        .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
+    }
+
+    const whereCondition = and(
+      eq(competitionTable.departmentId, user.departmentId!),
+      isNull(competitionTable.deletedAt)
+    );
+
+    const [totalResult, activeResult, draftResult, closedResult] = await Promise.all([
+      db.select({ count: count() }).from(competitionTable).where(whereCondition),
+      db
+        .select({ count: count() })
+        .from(competitionTable)
+        .where(and(whereCondition, eq(competitionTable.status, 'active'))),
+      db
+        .select({ count: count() })
+        .from(competitionTable)
+        .where(and(whereCondition, eq(competitionTable.status, 'draft'))),
+      db
+        .select({ count: count() })
+        .from(competitionTable)
+        .where(and(whereCondition, eq(competitionTable.status, 'closed'))),
+    ]);
+
+    const stats = {
+      total: Number(totalResult[0]?.count) || 0,
+      active: Number(activeResult[0]?.count) || 0,
+      draft: Number(draftResult[0]?.count) || 0,
+      closed: Number(closedResult[0]?.count) || 0,
+    };
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, stats, 'Competition stats fetched successfully'));
+  } catch (error) {
+    console.error('Error fetching competition stats:', error);
+    res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+  }
+});
 
 /**
  * GET /api/competitions/admin/list
- * List all competitions for admin (including draft/closed)
- * Query: ?status=draft&page=1&limit=20
- * Required: none (auth required)
- * Flow: Return all competitions in department (ignore deletedAt unless archived)
- * Success: { data: [competition[]], total, page, limit }
+ * List admin competitions (admin only)
  */
-export const listAdminCompetitions = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { status, page = '1', limit = '20' } = req.query;
-    const user = req.user;
+export const listAdminCompetitions = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    q,
+    status = 'all',
+    page = '1',
+    limit = '20',
+  } = req.query;
 
-    if (
-      !user ||
-      (user.role !== 'department_admin' && user.role !== 'faculty')
-    ) {
-      return res
-        .status(403)
-        .json(
-          new ApiResponse(403, null, 'Forbidden: Insufficient permissions')
-        );
-    }
+  const user = req.user;
 
-    const pageNum = parseInt(page as string, 10) || 1;
-    const limitNum = Math.min(parseInt(limit as string, 10) || 20, 100);
-    const offset = (pageNum - 1) * limitNum;
+  if (!user?.role || user.role !== 'department_admin') {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
+  }
 
-    const filters: any = [
-      eq(competitionTable.departmentId, user.departmentId!),
-      isNull(competitionTable.deletedAt),
-    ];
+  const pageNum = parseInt(page as string, 10) || 1;
+  const limitNum = Math.min(parseInt(limit as string, 10) || 20, 50);
+  const offset = (pageNum - 1) * limitNum;
 
-    if (status) {
-      filters.push(eq(competitionTable.status, status as string));
-    }
+  const filtersCondition = [
+    eq(competitionTable.departmentId, user.departmentId!),
+    isNull(competitionTable.deletedAt)
+  ];
 
-    const [totalResult] = await db
-      .select({ count: count(competitionTable.competitionId) })
-      .from(competitionTable)
-      .where(and(...filters));
+  if (status !== 'all') {
+    filtersCondition.push(eq(competitionTable.status, status as string));
+  }
 
-    const total = Number(totalResult.count);
+  if (q) {
+    const searchCondition = or(
+      ilike(competitionTable.title, `%${q}%`),
+      ilike(competitionTable.description, `%${q}%`)
+    );
+    filtersCondition.push(searchCondition);
+  }
 
-    const competitions = await db
+  const whereClause = and(...filtersCondition);
+
+  const [totalResult, competitions] = await Promise.all([
+    db.select({ count: count() }).from(competitionTable).where(whereClause),
+    db
       .select()
       .from(competitionTable)
-      .where(and(...filters))
+      .where(whereClause)
       .orderBy(desc(competitionTable.createdAt))
       .limit(limitNum)
-      .offset(offset);
+      .offset(offset),
+  ]);
 
-    return res.status(200).json(
-      new ApiResponse(200, {
-        competitions,
+  const total = Number(totalResult[0]?.count) || 0;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        data: competitions,
         total,
         page: pageNum,
         limit: limitNum,
-        status: status || null,
-      })
-    );
-  }
-);
+      },
+      'Admin competitions fetched successfully'
+    )
+  );
+});
 
 /**
  * GET /api/competitions/admin/:competitionId
- * Get single competition details (only admin access)
- * Required: competitionId
- * Flow: Find all non-deleted competition → Return full details including banner, description
- * Success: full competition object
+ * Get admin competition details (admin only)
  */
-export const getAdminCompetitionById = asyncHandler(
-  async (req: Request, res: Response) => {
+export const getAdminCompetitionById = asyncHandler(async (req: Request, res: Response) => {
+  try {
     const { competitionId } = req.params;
     const user = req.user;
 
-    if (!competitionId) {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, null, 'Bad Request: Missing competitionId'));
-    }
-
-    if (
-      !user ||
-      (user.role !== 'department_admin' && user.role !== 'faculty')
-    ) {
+    if (!user?.role || user.role !== 'department_admin') {
       return res
         .status(403)
-        .json(
-          new ApiResponse(403, null, 'Forbidden: Insufficient permissions')
-        );
+        .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
     }
 
     const competition = await db
@@ -535,85 +481,20 @@ export const getAdminCompetitionById = asyncHandler(
       .where(
         and(
           eq(competitionTable.competitionId, competitionId),
-          eq(competitionTable.postedBy, user.userId!),
+          eq(competitionTable.departmentId, user.departmentId!),
           isNull(competitionTable.deletedAt)
         )
-      )
-      .limit(1)
-      .then(rows => rows[0]);
+      );
 
-    if (!competition) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, 'Competition not found'));
+    if (competition.length === 0) {
+      return res.status(404).json(new ApiResponse(404, null, 'Competition not found'));
     }
 
     return res
       .status(200)
-      .json(
-        new ApiResponse(200, competition, 'Competition fetched successfully')
-      );
+      .json(new ApiResponse(200, competition[0], 'Competition details fetched successfully'));
+  } catch (error) {
+    console.error('Error fetching competition:', error);
+    res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
   }
-);
-
-/**
- * GET /api/competitions/stats
- * Get competition stats for department admin
- * Required: none (auth required)
- * Flow: Count total, active, upcoming, ended → Return summary
- * Success: { total: number, active: number, upcoming: number, ended: number }
- */
-export const getCompetitionStats = asyncHandler(
-  async (req: Request, res: Response) => {
-    const user = req.user;
-
-    if (
-      !user ||
-      (user.role !== 'department_admin' && user.role !== 'faculty')
-    ) {
-      return res
-        .status(403)
-        .json(
-          new ApiResponse(403, null, 'Forbidden: Insufficient permissions')
-        );
-    }
-
-    const baseFilter = [
-      eq(competitionTable.postedBy, user.userId!),
-      isNull(competitionTable.deletedAt),
-    ];
-
-    const [totalResult] = await db
-      .select({ count: count(competitionTable.competitionId) })
-      .from(competitionTable)
-      .where(and(...baseFilter));
-
-    const [activeResult] = await db
-      .select({ count: count(competitionTable.competitionId) })
-      .from(competitionTable)
-      .where(and(...baseFilter, eq(competitionTable.status, 'active')));
-
-    const [upcomingResult] = await db
-      .select({ count: count(competitionTable.competitionId) })
-      .from(competitionTable)
-      .where(and(...baseFilter, eq(competitionTable.status, 'upcoming')));
-
-    const [endedResult] = await db
-      .select({ count: count(competitionTable.competitionId) })
-      .from(competitionTable)
-      .where(and(...baseFilter, eq(competitionTable.status, 'ended')));
-
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          total: Number(totalResult.count),
-          active: Number(activeResult.count),
-          upcoming: Number(upcomingResult.count),
-          ended: Number(endedResult.count),
-        },
-        'Competition stats fetched successfully'
-      )
-    );
-  }
-);
+});
