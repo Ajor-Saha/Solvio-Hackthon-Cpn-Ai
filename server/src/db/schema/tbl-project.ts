@@ -24,9 +24,8 @@ export const projectTable = pgTable('tbl_project', {
     .references(() => courseTable.courseId),
   title: varchar('title', { length: 500 }).notNull(),
   description: text('description'),
-  studentId: text('student_id')
-    .notNull()
-    .references(() => userTable.userId),
+  // Removed studentId - now handled by tbl_project_student junction table
+  // This allows multiple students to collaborate on one project
   supervisorId: text('supervisor_id')
     .notNull()
     .references(() => userTable.userId),

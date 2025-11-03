@@ -8,7 +8,9 @@ import { institutionTable } from './tbl-institution';
 import { jobPostingTable } from './tbl-job-posting';
 import { milestoneTable, taskTable } from './tbl-milestone';
 import { projectTable } from './tbl-project';
+import { projectStudentTable } from './tbl-project-student';
 import { researchTable } from './tbl-research';
+import { researchStudentTable } from './tbl-research-student';
 import {
   evaluationTable,
   feedbackTable,
@@ -43,11 +45,13 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
     fields: [userTable.departmentId],
     references: [departmentTable.departmentId],
   }),
-  projectsAsStudent: many(projectTable, { relationName: 'student_projects' }),
+  // Many-to-many: projects through junction table
+  projectStudents: many(projectStudentTable),
   projectsAsSupervisor: many(projectTable, {
     relationName: 'supervisor_projects',
   }),
-  researchAsStudent: many(researchTable, { relationName: 'student_research' }),
+  // Many-to-many: research through junction table
+  researchStudents: many(researchStudentTable),
   researchAsSupervisor: many(researchTable, {
     relationName: 'supervisor_research',
   }),
@@ -108,11 +112,8 @@ export const courseResourceRelations = relations(
 
 // ============= Project Relations =============
 export const projectRelations = relations(projectTable, ({ one, many }) => ({
-  student: one(userTable, {
-    fields: [projectTable.studentId],
-    references: [userTable.userId],
-    relationName: 'student_projects',
-  }),
+  // Many-to-many: students through junction table
+  projectStudents: many(projectStudentTable),
   supervisor: one(userTable, {
     fields: [projectTable.supervisorId],
     references: [userTable.userId],
@@ -128,13 +129,25 @@ export const projectRelations = relations(projectTable, ({ one, many }) => ({
   evaluations: many(evaluationTable),
 }));
 
+// ============= Project-Student Junction Relations =============
+export const projectStudentRelations = relations(
+  projectStudentTable,
+  ({ one }) => ({
+    project: one(projectTable, {
+      fields: [projectStudentTable.projectId],
+      references: [projectTable.projectId],
+    }),
+    student: one(userTable, {
+      fields: [projectStudentTable.studentId],
+      references: [userTable.userId],
+    }),
+  })
+);
+
 // ============= Research Relations =============
 export const researchRelations = relations(researchTable, ({ one, many }) => ({
-  student: one(userTable, {
-    fields: [researchTable.studentId],
-    references: [userTable.userId],
-    relationName: 'student_research',
-  }),
+  // Many-to-many: students through junction table
+  researchStudents: many(researchStudentTable),
   supervisor: one(userTable, {
     fields: [researchTable.supervisorId],
     references: [userTable.userId],
@@ -149,6 +162,21 @@ export const researchRelations = relations(researchTable, ({ one, many }) => ({
   feedbacks: many(feedbackTable),
   evaluations: many(evaluationTable),
 }));
+
+// ============= Research-Student Junction Relations =============
+export const researchStudentRelations = relations(
+  researchStudentTable,
+  ({ one }) => ({
+    research: one(researchTable, {
+      fields: [researchStudentTable.researchId],
+      references: [researchTable.researchId],
+    }),
+    student: one(userTable, {
+      fields: [researchStudentTable.studentId],
+      references: [userTable.userId],
+    }),
+  })
+);
 
 // ============= Milestone Relations =============
 export const milestoneRelations = relations(

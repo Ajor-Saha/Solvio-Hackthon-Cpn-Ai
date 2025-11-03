@@ -84,24 +84,22 @@ export const createCourse = asyncHandler(
         targetDepartmentId,
         courseCode: courseCode.toUpperCase(),
         existingCourse: existingCourse.length,
-        adminUserDepartment: adminUser.departmentId
+        adminUserDepartment: adminUser.departmentId,
       });
 
       if (existingCourse.length > 0) {
         console.log('Course already exists:', existingCourse[0]);
-        return res
-          .status(409)
-          .json(
-            new ApiResponse(
-              409,
-              {
-                existingCourse: existingCourse[0],
-                attemptedCode: courseCode.toUpperCase(),
-                departmentId: targetDepartmentId
-              },
-              `Course with code "${courseCode.toUpperCase()}" already exists in the department`
-            )
-          );
+        return res.status(409).json(
+          new ApiResponse(
+            409,
+            {
+              existingCourse: existingCourse[0],
+              attemptedCode: courseCode.toUpperCase(),
+              departmentId: targetDepartmentId,
+            },
+            `Course with code "${courseCode.toUpperCase()}" already exists in the department`
+          )
+        );
       }
 
       // Create new course
@@ -226,7 +224,7 @@ export const getDepartmentCourses = asyncHandler(
   }
 );
 
-// Get courses by semester (using query parameter)
+// Get courses by semester (using query parameter) with role-based filtering
 export const getCoursesBySemesterQuery = asyncHandler(
   async (req: Request, res: Response) => {
     try {
@@ -235,11 +233,14 @@ export const getCoursesBySemesterQuery = asyncHandler(
 
       console.log('getCoursesBySemesterQuery called with query:', req.query);
       console.log('Semester query parameter:', semester);
+      console.log('User role:', user?.role);
 
       if (!semester || typeof semester !== 'string') {
         return res
           .status(400)
-          .json(new ApiResponse(400, {}, 'Semester query parameter is required'));
+          .json(
+            new ApiResponse(400, {}, 'Semester query parameter is required')
+          );
       }
 
       // Validate semester format (should be like "1/1", "2/2", etc.)
@@ -247,7 +248,13 @@ export const getCoursesBySemesterQuery = asyncHandler(
         console.log('Invalid semester format:', semester);
         return res
           .status(400)
-          .json(new ApiResponse(400, {}, `Invalid semester format: "${semester}". Should be like "1/1", "2/2", etc.`));
+          .json(
+            new ApiResponse(
+              400,
+              {},
+              `Invalid semester format: "${semester}". Should be like "1/1", "2/2", etc.`
+            )
+          );
       }
 
       if (!user?.departmentId) {
@@ -271,23 +278,69 @@ export const getCoursesBySemesterQuery = asyncHandler(
           .json(new ApiResponse(404, {}, 'Department not found'));
       }
 
-      const courses = await db
-        .select()
-        .from(courseTable)
-        .where(
-          and(
-            eq(courseTable.departmentId, user.departmentId),
-            eq(courseTable.semester, semester),
-            isNull(courseTable.deletedAt)
-          )
-        );
+      let courses;
 
-      console.log(`Found ${courses.length} courses for semester ${semester} in department ${user.departmentId}`);
+      // Role-based course fetching
+      if (user.role === 'department_admin') {
+        // Department admin sees ALL courses in the semester
+        courses = await db
+          .select()
+          .from(courseTable)
+          .where(
+            and(
+              eq(courseTable.departmentId, user.departmentId),
+              eq(courseTable.semester, semester),
+              isNull(courseTable.deletedAt)
+            )
+          );
+        console.log(
+          `Department admin: Found ${courses.length} courses for semester ${semester}`
+        );
+      } else {
+        // Faculty and students see only their enrolled courses
+        courses = await db
+          .select({
+            courseId: courseTable.courseId,
+            departmentId: courseTable.departmentId,
+            courseCode: courseTable.courseCode,
+            title: courseTable.title,
+            semester: courseTable.semester,
+            credits: courseTable.credits,
+            capacity: courseTable.capacity,
+            deletedAt: courseTable.deletedAt,
+            createdAt: courseTable.createdAt,
+            updatedAt: courseTable.updatedAt,
+          })
+          .from(courseTable)
+          .innerJoin(
+            courseEnrollmentTable,
+            eq(courseTable.courseId, courseEnrollmentTable.courseId)
+          )
+          .where(
+            and(
+              eq(courseTable.departmentId, user.departmentId),
+              eq(courseTable.semester, semester),
+              eq(courseEnrollmentTable.userId, user.userId),
+              isNull(courseTable.deletedAt),
+              isNull(courseEnrollmentTable.deletedAt)
+            )
+          );
+        console.log(
+          `${user.role}: Found ${courses.length} enrolled courses for semester ${semester}`
+        );
+      }
+
       console.log('Courses found:', courses);
 
       return res
         .status(200)
-        .json(new ApiResponse(200, courses, `Courses for semester ${semester} retrieved successfully`));
+        .json(
+          new ApiResponse(
+            200,
+            courses,
+            `Courses for semester ${semester} retrieved successfully`
+          )
+        );
     } catch (error) {
       console.error('Error getting courses by semester:', error);
       res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
@@ -295,7 +348,7 @@ export const getCoursesBySemesterQuery = asyncHandler(
   }
 );
 
-// Get courses by semester (using path parameter) - Original version with debugging
+// Get courses by semester (using path parameter) with role-based filtering
 export const getCoursesBySemester = asyncHandler(
   async (req: Request, res: Response) => {
     try {
@@ -304,6 +357,7 @@ export const getCoursesBySemester = asyncHandler(
 
       console.log('getCoursesBySemester called with params:', req.params);
       console.log('Raw semester parameter:', semester);
+      console.log('User role:', user?.role);
 
       if (!semester) {
         return res
@@ -319,7 +373,13 @@ export const getCoursesBySemester = asyncHandler(
         console.log('Invalid semester format:', semester);
         return res
           .status(400)
-          .json(new ApiResponse(400, {}, `Invalid semester format: "${semester}". Should be like "1/1", "2/2", etc.`));
+          .json(
+            new ApiResponse(
+              400,
+              {},
+              `Invalid semester format: "${semester}". Should be like "1/1", "2/2", etc.`
+            )
+          );
       }
 
       if (!user?.departmentId) {
@@ -343,23 +403,69 @@ export const getCoursesBySemester = asyncHandler(
           .json(new ApiResponse(404, {}, 'Department not found'));
       }
 
-      const courses = await db
-        .select()
-        .from(courseTable)
-        .where(
-          and(
-            eq(courseTable.departmentId, user.departmentId),
-            eq(courseTable.semester, semester),
-            isNull(courseTable.deletedAt)
-          )
-        );
+      let courses;
 
-      console.log(`Found ${courses.length} courses for semester ${semester} in department ${user.departmentId}`);
+      // Role-based course fetching
+      if (user.role === 'department_admin') {
+        // Department admin sees ALL courses in the semester
+        courses = await db
+          .select()
+          .from(courseTable)
+          .where(
+            and(
+              eq(courseTable.departmentId, user.departmentId),
+              eq(courseTable.semester, semester),
+              isNull(courseTable.deletedAt)
+            )
+          );
+        console.log(
+          `Department admin: Found ${courses.length} courses for semester ${semester}`
+        );
+      } else {
+        // Faculty and students see only their enrolled courses
+        courses = await db
+          .select({
+            courseId: courseTable.courseId,
+            departmentId: courseTable.departmentId,
+            courseCode: courseTable.courseCode,
+            title: courseTable.title,
+            semester: courseTable.semester,
+            credits: courseTable.credits,
+            capacity: courseTable.capacity,
+            deletedAt: courseTable.deletedAt,
+            createdAt: courseTable.createdAt,
+            updatedAt: courseTable.updatedAt,
+          })
+          .from(courseTable)
+          .innerJoin(
+            courseEnrollmentTable,
+            eq(courseTable.courseId, courseEnrollmentTable.courseId)
+          )
+          .where(
+            and(
+              eq(courseTable.departmentId, user.departmentId),
+              eq(courseTable.semester, semester),
+              eq(courseEnrollmentTable.userId, user.userId),
+              isNull(courseTable.deletedAt),
+              isNull(courseEnrollmentTable.deletedAt)
+            )
+          );
+        console.log(
+          `${user.role}: Found ${courses.length} enrolled courses for semester ${semester}`
+        );
+      }
+
       console.log('Courses found:', courses);
 
       return res
         .status(200)
-        .json(new ApiResponse(200, courses, `Courses for semester ${semester} retrieved successfully`));
+        .json(
+          new ApiResponse(
+            200,
+            courses,
+            `Courses for semester ${semester} retrieved successfully`
+          )
+        );
     } catch (error) {
       console.error('Error getting courses by semester:', error);
       res.status(500).json(new ApiResponse(500, null, 'Internal server error'));

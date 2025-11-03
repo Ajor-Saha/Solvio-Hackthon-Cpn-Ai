@@ -423,3 +423,91 @@ export const deleteCourseResource = asyncHandler(
     }
   }
 );
+
+// Update course resource
+export const updateCourseResource = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const authUser = req.user;
+
+      if (!authUser) {
+        return res
+          .status(401)
+          .json(new ApiResponse(401, {}, 'Unauthorized request'));
+      }
+
+      const { resourceId } = req.params;
+      const { title, description } = req.body;
+
+      if (!resourceId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, {}, 'Resource ID is required'));
+      }
+
+      // Check if resource exists
+      const existingResource = await db
+        .select()
+        .from(courseResourceTable)
+        .where(
+          and(
+            eq(courseResourceTable.resourceId, resourceId),
+            isNull(courseResourceTable.deletedAt)
+          )
+        );
+
+      if (existingResource.length === 0) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, 'Resource not found'));
+      }
+
+      const resource = existingResource[0];
+
+      // Only the uploader or department admin can update
+      if (
+        resource.uploadedBy !== authUser.userId &&
+        authUser.role !== 'department_admin'
+      ) {
+        return res
+          .status(403)
+          .json(
+            new ApiResponse(
+              403,
+              {},
+              'You do not have permission to update this resource'
+            )
+          );
+      }
+
+      // Build update object
+      const updateData: any = { updatedAt: new Date() };
+      if (title) updateData.title = title.trim();
+      if (description !== undefined)
+        updateData.description = description?.trim() || null;
+
+      if (Object.keys(updateData).length === 1) {
+        return res
+          .status(400)
+          .json(
+            new ApiResponse(400, {}, 'No valid fields provided for update')
+          );
+      }
+
+      const [updatedResource] = await db
+        .update(courseResourceTable)
+        .set(updateData)
+        .where(eq(courseResourceTable.resourceId, resourceId))
+        .returning();
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, updatedResource, 'Resource updated successfully')
+        );
+    } catch (error) {
+      console.error('Error updating course resource:', error);
+      res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
+    }
+  }
+);
