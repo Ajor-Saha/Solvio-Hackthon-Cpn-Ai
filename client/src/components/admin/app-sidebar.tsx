@@ -35,6 +35,7 @@ import {
   Plus,
   SettingsIcon,
   Trophy,
+  UserCheck,
   UserCog,
   UserPlus,
   Users
@@ -184,6 +185,14 @@ const getSidebarData = (role: string) => {
                 icon: <Plus size={16} />,
               },
             ],
+          },
+
+          // New top-level section
+          {
+            title: "Course Enrollment",
+            url: "/course-enrollment",
+            icon: <UserCheck size={20} />,
+            items: [],
           },
           {
             title: "Announcement",
