@@ -7,15 +7,16 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import useAuthStore from "@/store/store";
 import {
-  BookOpen,
-  Bot,
-  Calculator,
-  Code,
-  Globe,
+  Briefcase,
+  CheckCircle,
+  FileCode,
+  GitBranch,
   Lightbulb,
   MessageSquare,
+  Rocket,
   Send,
   Sparkles,
+  Target,
   User
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -30,28 +31,28 @@ interface Message {
 
 const suggestedPrompts = [
   {
-    icon: <BookOpen className="w-4 h-4" />,
-    title: "Explain a concept",
-    prompt: "Can you explain a difficult concept from my recent lessons?"
+    icon: <Rocket className="w-4 h-4" />,
+    title: "Project Idea",
+    prompt: "I want to build a machine learning project for image classification. Give me a complete project plan with documentation structure, key features, and step-by-step implementation guide."
   },
   {
-    icon: <Code className="w-4 h-4" />,
-    title: "Quiz help",
-    prompt: "Help me understand where I went wrong in my recent quizzes"
+    icon: <FileCode className="w-4 h-4" />,
+    title: "Web App",
+    prompt: "Help me create a full-stack web application with authentication and database. Include project architecture, tech stack recommendations, and development roadmap."
   },
   {
-    icon: <Calculator className="w-4 h-4" />,
-    title: "Study guidance",
-    prompt: "Based on my performance, what should I focus on studying next?"
+    icon: <GitBranch className="w-4 h-4" />,
+    title: "API Development",
+    prompt: "I need to build a RESTful API. Provide project documentation template, key features to implement, and a detailed step-by-step guide."
   },
   {
-    icon: <Globe className="w-4 h-4" />,
-    title: "Learning progress",
-    prompt: "How am I performing across my subjects? Any weak areas?"
+    icon: <Target className="w-4 h-4" />,
+    title: "Research Project",
+    prompt: "Guide me through creating a research project on NLP. Include literature review structure, methodology, implementation plan, and documentation guidelines."
   }
 ];
 
-export default function AITutorPage() {
+export default function ProjectAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -82,18 +83,101 @@ export default function AITutorPage() {
     setInputValue("");
     setIsLoading(true);
 
-    // Simulate AI response for demo
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Thank you for your question! This is a demo AI Tutor interface. The backend AI integration is currently being developed. Once connected, I'll be able to provide personalized learning assistance based on your course data and performance.",
-        role: 'assistant',
-        timestamp: new Date()
-      };
+    // Create placeholder message for streaming
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: '',
+      role: 'assistant',
+      timestamp: new Date()
+    };
 
-      setMessages(prev => [...prev, aiMessage]);
+    setMessages(prev => [...prev, assistantMessage]);
+
+    try {
+      // Get auth token from store
+      const token = useAuthStore.getState().accessToken;
+
+      // Use fetch for streaming (SSE)
+      const response = await fetch('http://localhost:8000/api/ai/project-assistant/chat-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          conversationHistory: messages.slice(-5).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+
+                if (data.text) {
+                  accumulatedText += data.text;
+                  // Update the message with accumulated text
+                  setMessages(prev =>
+                    prev.map(msg =>
+                      msg.id === assistantMessageId
+                        ? { ...msg, content: accumulatedText }
+                        : msg
+                    )
+                  );
+                }
+
+                if (data.done) {
+                  console.log('Stream completed');
+                }
+              } catch (parseError) {
+                console.error('Error parsing SSE data:', parseError);
+              }
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+
+      // Update the assistant message with error
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content: `Sorry, I encountered an error: ${error.message || 'Failed to get response'}. Please try again.`
+              }
+            : msg
+        )
+      );
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -113,24 +197,24 @@ export default function AITutorPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+            <Briefcase className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              AI Tutor - Project Assistant
+              AI Project Assistant
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Your personalized learning assistant
+              Get detailed project plans, documentation, and implementation guides
             </p>
           </div>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
             <Sparkles className="w-3 h-3 mr-1" />
-            Demo Mode
+            AI Powered
           </Badge>
         </div>
       </div>
@@ -139,42 +223,75 @@ export default function AITutorPage() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center max-w-2xl mx-auto">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mb-6">
-                <Bot className="w-10 h-10 text-white" />
+            <div className="flex flex-col items-center justify-center h-full text-center max-w-3xl mx-auto px-4">
+              <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
+                <Rocket className="w-12 h-12 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Hello {user?.firstName}! 👋
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                Welcome to AI Project Assistant! �
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-2">
-                I'm your AI Tutor, ready to assist with your learning journey.
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                Transform your ideas into fully-fledged projects with AI-powered guidance
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-                I can help you understand concepts, explain quiz results, suggest study plans, and answer your questions.
+                Get comprehensive project plans including documentation structure, key features, tech stack recommendations, and step-by-step implementation guides
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 {suggestedPrompts.map((suggestion, index) => (
                   <Card
                     key={index}
-                    className="p-4 hover:shadow-md transition-all cursor-pointer border-dashed border-2 hover:border-purple-300 dark:hover:border-purple-600"
+                    className="p-5 hover:shadow-xl transition-all cursor-pointer border-2 hover:border-green-400 dark:hover:border-green-600 hover:scale-105 group bg-white dark:bg-gray-800"
                     onClick={() => handleSuggestedPrompt(suggestion.prompt)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform shadow-md">
                         {suggestion.icon}
                       </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                      <div className="flex-1 text-left">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base mb-1">
                           {suggestion.title}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                           {suggestion.prompt}
                         </p>
                       </div>
                     </div>
                   </Card>
                 ))}
+              </div>
+
+              <div className="mt-10 p-5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800 max-w-2xl">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  What I Can Help You With:
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-700 dark:text-gray-300">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>Complete project documentation structure</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>Key features and requirements analysis</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>Tech stack recommendations</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>Step-by-step implementation guide</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>Architecture design and diagrams</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>Best practices and code structure</span>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -185,12 +302,12 @@ export default function AITutorPage() {
                     <AvatarFallback className={`${
                       message.role === 'user'
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
-                        : 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'
+                        : 'bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 dark:from-green-900/20 dark:to-emerald-900/20 dark:text-green-400'
                     }`}>
                       {message.role === 'user' ? (
                         <User className="w-4 h-4" />
                       ) : (
-                        <Bot className="w-4 h-4" />
+                        <Rocket className="w-4 h-4" />
                       )}
                     </AvatarFallback>
                   </Avatar>
@@ -198,7 +315,7 @@ export default function AITutorPage() {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                        {message.role === 'user' ? (user?.firstName || 'You') : 'AI Tutor'}
+                        {message.role === 'user' ? (user?.firstName || 'You') : 'Project Assistant'}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {formatTime(message.timestamp)}
@@ -213,6 +330,16 @@ export default function AITutorPage() {
                       {message.role === 'user' ? (
                         <div className="text-sm text-gray-700 dark:text-gray-300">
                           {message.content}
+                        </div>
+                      ) : message.content === '' && isLoading ? (
+                        // Loading indicator for streaming
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                          <span className="text-sm">Generating response...</span>
                         </div>
                       ) : (
                         <div className="prose dark:prose-invert max-w-none prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-50 dark:prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700">
@@ -310,15 +437,15 @@ export default function AITutorPage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask me about your learning progress, quiz results, or any study questions..."
-                  className="min-h-[50px] max-h-[150px] resize-none pr-12 border-gray-300 dark:border-gray-600 focus:border-purple-500 dark:focus:border-purple-400"
+                  placeholder="Describe your project idea and I'll help you create a comprehensive plan with documentation, features, and implementation guide..."
+                  className="min-h-[50px] max-h-[150px] resize-none pr-12 border-gray-300 dark:border-gray-600 focus:border-green-500 dark:focus:border-green-400"
                   disabled={isLoading}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
                   size="sm"
-                  className="absolute right-2 bottom-2 h-8 w-8 p-0 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                  className="absolute right-2 bottom-2 h-8 w-8 p-0 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-600"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -337,7 +464,7 @@ export default function AITutorPage() {
                 </div>
                 <div className="flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  <span>Demo AI</span>
+                  <span>Streaming AI</span>
                 </div>
               </div>
             </div>

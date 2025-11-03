@@ -210,7 +210,7 @@ const getSidebarData = (role: string) => {
                 icon: <Briefcase size={16} />,
               },
               {
-                title: "Post Competition",
+                title: "Competition",
                 url: "/announcement/competition",
                 icon: <Trophy size={16} />,
               },

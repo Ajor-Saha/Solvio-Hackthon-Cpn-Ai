@@ -342,7 +342,7 @@ export const deleteShowcase = asyncHandler(
     const { showcaseId } = req.params;
     const user = req.user; // assumed from auth middleware
 
-    if (!user?.role || user.role !== 'admindepartment_admin') {
+    if (!user?.role || user.role !== 'department_admin') {
       return res
         .status(403)
         .json(

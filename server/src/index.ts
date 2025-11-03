@@ -4,13 +4,16 @@ import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import logger from 'morgan';
 
+import ai_router from './routes/ai-route';
 import user_router from './routes/auth-route';
+import competition_router from './routes/competition-route';
 import courseResource_router from './routes/course-resource-route';
 import course_router from './routes/course-route';
 import department_router from './routes/department-route';
 import institution_router from './routes/institution-route';
 import jobpost_router from './routes/jobsposting-routes';
 import project_router from './routes/project-route';
+import research_router from './routes/research-route';
 import showcase_router from './routes/showcase-route';
 import userManagement_router from './routes/user-management-route';
 
@@ -57,11 +60,20 @@ app.use('/api/course-resource', courseResource_router);
 // Project routes
 app.use('/api/project', project_router);
 
+// Research routes
+app.use('/api/research', research_router);
+
 // Department Showcases routes
 app.use('/api/showcases', showcase_router);
 
 // Job Postings routes
 app.use('/api/jobs', jobpost_router);
+
+// AI Assistant routes
+app.use('/api/ai', ai_router);
+
+// Competition routes
+app.use('/api/competitions', competition_router);
 
 // Health check route
 app.get('/', (req, res) => {
