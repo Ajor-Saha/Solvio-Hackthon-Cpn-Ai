@@ -62,32 +62,32 @@ export default function HomeLanding() {
   const opacityRange = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
       {/* Hero */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-10">
         <motion.div style={{ y: yRange, opacity: opacityRange }} className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-3xl" />
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-cyan-500/30 rounded-full blur-2xl animate-pulse delay-1000" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-800/20 to-slate-700/10 blur-3xl" />
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-slate-700/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-slate-600/15 rounded-full blur-2xl" />
         </motion.div>
         <div className="max-w-7xl mx-auto px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 100 }} animate={heroInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
-            <Badge className="mb-6 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-purple-300 border-purple-500/30">
+            <Badge className="mb-6 bg-white/5 text-gray-300 border border-white/10">
               <Sparkles className="w-4 h-4 mr-2" /> Open Innovation Platform
             </Badge>
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Campus Projects & <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">Proof Network</span>
+              Campus Projects & <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Proof Network</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-4xl mx-auto">
-              The campus-wide OS where students collaborate, keep verifiable diaries and get AI-powered guidance via <span className="text-purple-400 font-semibold">ScholarPulse</span> & <span className="text-cyan-400 font-semibold">CareerPulse</span>.
+              The campus-wide OS where students collaborate, keep verifiable diaries and get AI-powered guidance via <span className="text-gray-200 font-semibold">ScholarPulse</span> & <span className="text-gray-200 font-semibold">CareerPulse</span>.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Link href="/signup">
-                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 px-8 py-4 shadow-2xl hover:shadow-purple-500/40 hover:scale-105 transition">
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 px-8 py-4 shadow-xl hover:scale-105 transition">
                   Start Your Journey <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-4 backdrop-blur-sm">
+              <Button size="lg" variant="outline" className="border-white/10 text-white hover:bg-white/5 px-8 py-4 backdrop-blur-sm">
                 <Play className="mr-2 w-5 h-5" /> Watch Demo
               </Button>
             </div>
@@ -95,7 +95,7 @@ export default function HomeLanding() {
             <motion.div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto" variants={stagger} initial="initial" animate={heroInView ? 'animate' : 'initial'}>
               {[{ label: 'Active Projects', value: '2,500+', icon: Rocket }, { label: 'Research Papers', value: '15K+', icon: BookOpen }, { label: 'Success Rate', value: '94%', icon: Award }].map((s, i) => (
                 <motion.div key={i} variants={fadeInUp} className="text-center">
-                  <div className="flex items-center justify-center mb-2"><s.icon className="w-6 h-6 text-purple-400 mr-2" /><span className="text-2xl font-bold">{s.value}</span></div>
+                  <div className="flex items-center justify-center mb-2"><s.icon className="w-6 h-6 text-indigo-300 mr-2" /><span className="text-2xl font-bold">{s.value}</span></div>
                   <p className="text-gray-400">{s.label}</p>
                 </motion.div>
               ))}
@@ -111,25 +111,25 @@ export default function HomeLanding() {
       <section id="features" ref={featuresRef} className="py-24">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} animate={featuresInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }}>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Revolutionary Campus <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Innovation</span></h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Revolutionary Campus <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Innovation</span></h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">Five integrated pillars that transform how students learn, collaborate, and succeed.</p>
           </motion.div>
 
           <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" variants={stagger} initial="initial" animate={featuresInView ? 'animate' : 'initial'}>
             {[{ icon: Users, title: 'Project Execution & Proof', desc: 'Milestone-driven rooms with blockchain-verified diaries', list: ['Collaboration', 'Milestones', 'Supervisor reviews', 'Verifiable logs'] }, { icon: Brain, title: 'AI-Powered Learning', desc: 'Ask-Your-Library RAG and design helpers', list: ['Research assistance', 'Method comparison', 'Repro checks', 'Study planning'] }, { icon: TrendingUp, title: 'ScholarPulse Engine', desc: 'Research-trend analysis guiding next steps', list: ['Topic velocity', 'Collab targets', 'Grants', 'Focus map'] }, { icon: Target, title: 'CareerPulse Engine', desc: 'Job-market intelligence for personal skill paths', list: ['Demand analysis', 'Skill gaps', 'Portfolio planning', 'Company match'] }, { icon: Shield, title: 'Blockchain Integrity', desc: 'Immutable proof & provenance badges', list: ['Tamper-proof', 'Dataset/code hashes', 'Badges', 'Trust network'] }, { icon: Eye, title: 'Discovery & Outcomes', desc: 'Verified feed & project showcases', list: ['Portfolios', 'Achievement feed', 'Archive search', 'Impact tracking'] }].map((f, i) => (
               <motion.div key={i} variants={scaleIn}>
-                <Card className="h-full bg-gradient-to-br from-gray-900/30 to-gray-800/30 backdrop-blur-xl border-gray-700/30 hover:border-purple-500/50 transition group hover:shadow-2xl hover:-translate-y-2">
+                <Card className="h-full bg-gradient-to-br from-slate-900/40 to-slate-800/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition group hover:shadow-xl hover:-translate-y-1">
                   <CardContent className="p-6 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-400/5 to-slate-300/5 opacity-0 group-hover:opacity-100 transition" />
                     <div className="relative z-10">
                       <div className="flex items-center mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition"><f.icon className="w-6 h-6 text-purple-400" /></div>
+                        <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition"><f.icon className="w-6 h-6 text-indigo-300" /></div>
                         <h3 className="text-xl font-semibold">{f.title}</h3>
                       </div>
                       <p className="text-gray-300 mb-4">{f.desc}</p>
                       <ul className="space-y-2">
                         {f.list.map((li, idx) => (
-                          <li key={idx} className="flex items-center text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 mr-2" />{li}</li>
+                          <li key={idx} className="flex items-center text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-emerald-300 mr-2" />{li}</li>
                         ))}
                       </ul>
                     </div>
@@ -145,15 +145,15 @@ export default function HomeLanding() {
       <section id="how-it-works" className="py-24 bg-gradient-to-r from-gray-900/30 to-gray-800/30">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">How <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">CPN-AI</span> Works</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">How <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">CPN-AI</span> Works</h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">A seamless flow from idea to career success</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[{ step: '01', title: 'Create Project Room', desc: 'Milestones, tasks & supervisor workflows', icon: Users }, { step: '02', title: 'Build & Document', desc: 'AI assistance & verifiable diary', icon: Brain }, { step: '03', title: 'Strategic Insights', desc: 'ScholarPulse & CareerPulse guidance', icon: TrendingUp }, { step: '04', title: 'Showcase & Succeed', desc: 'Publish verified achievements', icon: Award }].map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: i * 0.1 }} viewport={{ once: true }} className="text-center">
                 <div className="relative mb-6">
-                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4"><s.icon className="w-8 h-8 text-white" /></div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-sm font-bold text-purple-400">{s.step}</div>
+                  <div className="w-20 h-20 bg-gradient-to-r from-indigo-600 to-slate-600 rounded-full flex items-center justify-center mx-auto mb-4"><s.icon className="w-8 h-8 text-white" /></div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-sm font-bold text-gray-400">{s.step}</div>
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{s.title}</h3>
                 <p className="text-gray-300">{s.desc}</p>
@@ -165,12 +165,12 @@ export default function HomeLanding() {
 
       {/* Stats */}
       <section ref={statsRef} className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-cyan-900/20 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/20 to-slate-800/10 -z-10" />
         <div className="max-w-7xl mx-auto px-6">
           <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" variants={stagger} initial="initial" animate={statsInView ? 'animate' : 'initial'}>
             {[{ value: '50K+', label: 'Students Empowered', icon: Users }, { value: '2.5K+', label: 'Active Projects', icon: Rocket }, { value: '94%', label: 'Success Rate', icon: TrendingUp }, { value: '15K+', label: 'Research Papers', icon: BookOpen }].map((s, i) => (
               <motion.div key={i} variants={fadeInUp}>
-                <s.icon className="w-8 h-8 text-purple-400 mx-auto mb-4" />
+                <s.icon className="w-8 h-8 text-indigo-300 mx-auto mb-4" />
                 <div className="text-4xl font-bold mb-2">{s.value}</div>
                 <div className="text-gray-300">{s.label}</div>
               </motion.div>
@@ -183,15 +183,15 @@ export default function HomeLanding() {
       <section id="testimonials" ref={testimonialsRef} className="py-24 bg-gradient-to-r from-gray-900/50 to-gray-800/50">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} animate={testimonialsInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }}>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Success <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Stories</span></h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Success <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Stories</span></h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">Real students, real results, real impact</p>
           </motion.div>
           <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-8" variants={stagger} initial="initial" animate={testimonialsInView ? 'animate' : 'initial'}>
             {[{ name: 'Sarah Chen', role: 'CS PhD Student', uni: 'Stanford', quote: 'ScholarPulse helped me identify research gaps and publish 3 papers.' }, { name: 'Marcus Johnson', role: 'Engineering Student', uni: 'MIT', quote: 'The verifiable diary landed me an internship at Google.' }, { name: 'Dr. Priya Patel', role: 'Research Supervisor', uni: 'UC Berkeley', quote: 'Milestone tracking lets me guide 20+ projects effortlessly.' }].map((t, i) => (
               <motion.div key={i} variants={scaleIn}>
-                <Card className="h-full bg-gradient-to-br from-gray-800/50 to-gray-700/50 backdrop-blur-xl border-gray-600/50 hover:border-purple-500/50 transition">
+                <Card className="h-full bg-gradient-to-br from-slate-800/50 to-slate-700/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition">
                   <CardContent className="p-6">
-                    <div className="flex items-center mb-4"><div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold mr-4">{t.name.split(' ').map(n => n[0]).join('')}</div><div><h4 className="font-semibold">{t.name}</h4><p className="text-sm text-gray-400">{t.role}</p><p className="text-xs text-purple-400">{t.uni}</p></div></div>
+                    <div className="flex items-center mb-4"><div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-slate-600 rounded-full flex items-center justify-center text-white font-bold mr-4">{t.name.split(' ').map(n => n[0]).join('')}</div><div><h4 className="font-semibold">{t.name}</h4><p className="text-sm text-gray-400">{t.role}</p><p className="text-xs text-gray-400">{t.uni}</p></div></div>
                     <div className="flex mb-4">{Array(5).fill(0).map((_, idx) => <Star key={idx} className="w-4 h-4 text-yellow-400 fill-current" />)}</div>
                     <p className="text-gray-300 italic">"{t.quote}"</p>
                   </CardContent>
@@ -204,14 +204,14 @@ export default function HomeLanding() {
 
       {/* CTA */}
       <section className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/30 to-slate-800/20 -z-10" />
         <div className="max-w-4xl mx-auto px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Academic Journey?</span></h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Academic Journey?</span></h2>
             <p className="text-xl text-gray-300 mb-8">Join thousands already building the future with CPN-AI.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/signup"><Button size="lg" className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 px-8 py-4 shadow-2xl hover:shadow-purple-500/40 hover:scale-105 transition">Start Free Trial <ArrowRight className="ml-2 w-5 h-5" /></Button></Link>
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 px-8 py-4 backdrop-blur-sm"><Coffee className="mr-2 w-5 h-5" /> Schedule Demo</Button>
+              <Link href="/signup"><Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 px-8 py-4 shadow-xl hover:scale-105 transition">Start Free Trial <ArrowRight className="ml-2 w-5 h-5" /></Button></Link>
+              <Button size="lg" variant="outline" className="border-white/10 text-white hover:bg-white/5 px-8 py-4 backdrop-blur-sm"><Coffee className="mr-2 w-5 h-5" /> Schedule Demo</Button>
             </div>
           </motion.div>
         </div>
