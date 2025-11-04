@@ -79,7 +79,9 @@ function Header() {
       >
         <div
           className={`max-w-7xl w-full mx-auto px-2 sm:px-4 py-3 sm:py-4 md:py-5 lg:py-6 flex justify-between items-center rounded-full transition-all duration-300 ease-in-out ${
-            isScrolledDown ? "bg-teal-400 dark:bg-teal-800/70" : "bg-teal-400 dark:bg-teal-800"
+            isScrolledDown
+              ? "bg-slate-900/60 border border-white/10"
+              : "bg-slate-900/80 border border-white/10"
           }`}
         >
           {/* Left Side: Project Name */}
@@ -95,22 +97,22 @@ function Header() {
              {/* <a href="#dashboard" className="dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
              Dashboard
             </a> */}
-            <Link href="/starter-feed" className="dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
+            <Link href="/starter-feed" className="dark:text-gray-200 hover:text-white dark:hover:text-white">
               StarterFeed
             </Link>
-            <Link href="/courses" className="dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
+            <Link href="/courses" className="dark:text-gray-200 hover:text-white dark:hover:text-white">
               Courses
             </Link>
-            <a href="#ai-support" className=" dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
+            <a href="#ai-support" className=" dark:text-gray-200 hover:text-white dark:hover:text-white">
               AI Support
             </a>
-            <a href="#quizzes" className=" dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
+            <a href="#quizzes" className=" dark:text-gray-200 hover:text-white dark:hover:text-white">
               Quizzes
             </a>
-            <a href="#progress" className=" dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
+            <a href="#progress" className=" dark:text-gray-200 hover:text-white dark:hover:text-white">
               Progress
             </a>
-            <a href="#resources" className=" dark:text-gray-200 hover:text-pink-400 dark:hover:text-white">
+            <a href="#resources" className=" dark:text-gray-200 hover:text-white dark:hover:text-white">
               Resources
             </a>
 
@@ -185,7 +187,7 @@ function Header() {
 
       {/* Mobile Menu Dropdown (Includes Login) */}
       {isOpen && (
-        <div className="md:hidden bg-teal-400 dark:bg-teal-800 mt-5 p-3 sm:p-4 space-y-1 sm:space-y-2 fixed top-[60px] sm:top-[70px] md:top-[80px] left-0 right-0 z-40 w-screen overflow-y-auto max-h-[calc(100vh-60px)] sm:max-h-[calc(100vh-70px)] md:max-h-[calc(100vh-80px)]">
+        <div className="md:hidden bg-slate-900/90 backdrop-blur border-b border-white/10 mt-5 p-3 sm:p-4 space-y-1 sm:space-y-2 fixed top-[60px] sm:top-[70px] md:top-[80px] left-0 right-0 z-40 w-screen overflow-y-auto max-h-[calc(100vh-60px)] sm:max-h-[calc(100vh-70px)] md:max-h-[calc(100vh-80px)]">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 font-semibold">
             <Link
               href="/starter-feed"

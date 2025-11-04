@@ -1,530 +1,221 @@
 "use client";
 
-import FloatingChatbot from "@/components/chatbot/FloatingChatbot";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+// Clean slate – replace old StudyFlow content with the new CPN-AI landing sections
+import { useState, useEffect } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { InfiniteSlider } from "@/components/ui/InfiniteSlider";
-import { ProgressiveBlur } from "@/components/ui/progressive-blur";
-import { motion, useScroll, useTransform } from "framer-motion";
-import {
-  BarChart3,
+  ArrowRight,
   Brain,
-  ChevronRight,
-  GraduationCap,
   Shield,
-  Target,
+  Users,
   TrendingUp,
-  Users
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRef, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
+  BookOpen,
+  Target,
+  CheckCircle,
+  Star,
+  Play,
+  ChevronDown,
+  Sparkles,
+  Rocket,
+  Network,
+  Eye,
+  Award,
+  Coffee,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
+// Intersection-observer helper
+const useInView = (threshold = 0.1) => {
+  const [isInView, setIsInView] = useState(false);
+  const [ref, setRef] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!ref) return;
+    const obs = new IntersectionObserver(([e]) => setIsInView(e.isIntersecting), { threshold });
+    obs.observe(ref);
+    return () => obs.disconnect();
+  }, [ref, threshold]);
+  return [setRef, isInView] as const;
+};
+
+// Animation presets
 const fadeInUp = {
-  hidden: { opacity: 0, y: 60 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.8, ease: [0.6, -0.05, 0.01, 0.99] }
-  }
+  initial: { opacity: 0, y: 60 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
 };
-
-const staggerContainer = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.15
-    }
-  }
-};
-
+const stagger = { animate: { transition: { staggerChildren: 0.1 } } };
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99] }
-  }
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
 };
 
-export default function StudyFlowLandingPage() {
-  const heroRef = useRef(null);
+export default function HomeLanding() {
   const { scrollYProgress } = useScroll();
-  const y = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+  const [heroRef, heroInView] = useInView(0.1);
+  const [featuresRef, featuresInView] = useInView(0.1);
+  const [statsRef, statsInView] = useInView(0.1);
+  const [testimonialsRef, testimonialsInView] = useInView(0.1);
 
-  const [activeFeature, setActiveFeature] = useState(0);
-
-  const features = [
-    {
-      icon: <Brain className="w-6 h-6" />,
-      title: "Intelligent Assessment",
-      description: "Advanced cognitive evaluation algorithms that adapt to individual learning patterns and provide precise insights into knowledge gaps.",
-      metrics: "94% accuracy improvement"
-    },
-    {
-      icon: <Target className="w-6 h-6" />,
-      title: "Adaptive Learning Paths",
-      description: "Personalized curriculum that dynamically adjusts difficulty and content based on performance analytics and learning velocity.",
-      metrics: "3x faster mastery"
-    },
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: "Performance Analytics",
-      description: "Comprehensive data visualization and insights into stress patterns, attention metrics, and cognitive load optimization.",
-      metrics: "Real-time tracking"
-    },
-    {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Evidence-Based Learning",
-      description: "Research-backed methodologies incorporating spaced repetition, active recall, and cognitive load theory for optimal retention.",
-      metrics: "Proven methodology"
-    }
-  ];
-
-  const stats = [
-    { value: "25,000+", label: "Active Learners", suffix: "" },
-    { value: "94%", label: "Success Rate", suffix: "" },
-    { value: "150+", label: "Institutions", suffix: "" },
-    { value: "4.9", label: "Platform Rating", suffix: "/5" }
-  ];
-
-  const quizData = [
-    { subject: "Mathematics", performance: 85, difficulty: 78 },
-    { subject: "Physics", performance: 82, difficulty: 85 },
-    { subject: "Chemistry", performance: 88, difficulty: 72 },
-    { subject: "Biology", performance: 79, difficulty: 68 },
-  ];
-
-  const cognitiveData = [
-    { name: "Focus", value: 85, color: "#3b82f6" },
-    { name: "Memory", value: 78, color: "#8b5cf6" },
-    { name: "Processing", value: 82, color: "#06d6a0" },
-    { name: "Retention", value: 88, color: "#f59e0b" },
-  ];
+  const yRange = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const opacityRange = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   return (
-    <>
-      <main className="overflow-hidden">
-        {/* Hero Section */}
-        <section ref={heroRef} className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-          <motion.div
-            style={{ y, opacity }}
-            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_70%)]"
-          />
-
-          <div className="container mx-auto px-6 relative z-10">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={staggerContainer}
-              className="max-w-4xl mx-auto text-center"
-            >
-              <motion.div variants={fadeInUp}>
-                <Badge className="mb-8 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800 px-4 py-2">
-                  Next-Generation Learning Platform
-                </Badge>
-              </motion.div>
-
-              <motion.h1
-                variants={fadeInUp}
-                className="text-5xl md:text-7xl font-bold mb-8 text-slate-900 dark:text-white tracking-tight"
-              >
-                CPN AI
-                <motion.span
-                  className="block text-3xl md:text-5xl font-light text-slate-600 dark:text-slate-300 mt-4"
-                  variants={fadeInUp}
-                >
-                  AI-Powered Campus Projects & Proof Network
-                </motion.span>
-              </motion.h1>
-
-              <motion.p
-                variants={fadeInUp}
-                className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 mb-12 leading-relaxed max-w-3xl mx-auto font-light"
-              >
-                Advanced cognitive assessment and personalized learning paths powered by
-                machine learning algorithms and educational psychology research.
-              </motion.p>
-
-              <motion.div
-                variants={fadeInUp}
-                className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
-              >
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300 group"
-                >
-                  <Link href="/sign-up">
-                    Get Started
-                    <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-                  </Link>
+    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+      {/* Hero */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-10">
+        <motion.div style={{ y: yRange, opacity: opacityRange }} className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-800/20 to-slate-700/10 blur-3xl" />
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-slate-700/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-slate-600/15 rounded-full blur-2xl" />
+        </motion.div>
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <motion.div initial={{ opacity: 0, y: 100 }} animate={heroInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}>
+            <Badge className="mb-6 bg-white/5 text-gray-300 border border-white/10">
+              <Sparkles className="w-4 h-4 mr-2" /> Open Innovation Platform
+            </Badge>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Campus Projects & <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Proof Network</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-4xl mx-auto">
+              The campus-wide OS where students collaborate, keep verifiable diaries and get AI-powered guidance via <span className="text-gray-200 font-semibold">ScholarPulse</span> & <span className="text-gray-200 font-semibold">CareerPulse</span>.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <Link href="/signup">
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 px-8 py-4 shadow-xl hover:scale-105 transition">
+                  Start Your Journey <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 px-8 py-4 rounded-lg text-lg font-medium transition-all duration-300"
-                >
-                  <Link href="/dashboard">
-                    View Platform
-                  </Link>
-                </Button>
-              </motion.div>
-
-              <motion.div
-                variants={fadeInUp}
-                className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
-              >
-                {stats.map((stat, index) => (
-                  <motion.div
-                    key={index}
-                    variants={scaleIn}
-                    className="p-4"
-                  >
-                    <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                      {stat.value}{stat.suffix}
-                    </div>
-                    <div className="text-slate-600 dark:text-slate-400 font-medium">
-                      {stat.label}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Trusted By Section */}
-        <section className="py-16 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-          <div className="container mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
-            >
-              <p className="text-slate-500 dark:text-slate-400 font-medium">Trusted by leading educational institutions</p>
-            </motion.div>
-            <div className="relative">
-              <InfiniteSlider speedOnHover={20} speed={40} gap={112}>
-                <div className="flex items-center">
-                  <span className="text-xl font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors">
-                    Harvard University
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-xl font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors">
-                    MIT
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-xl font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors">
-                    Stanford University
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-xl font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors">
-                    GeeksforGeeks
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-xl font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors">
-                    Google
-                  </span>
-                </div>
-              </InfiniteSlider>
-              <ProgressiveBlur
-                className="pointer-events-none absolute left-0 top-0 h-full w-20"
-                direction="left"
-                blurIntensity={1}
-              />
-              <ProgressiveBlur
-                className="pointer-events-none absolute right-0 top-0 h-full w-20"
-                direction="right"
-                blurIntensity={1}
-              />
+              </Link>
+              <Button size="lg" variant="outline" className="border-white/10 text-white hover:bg-white/5 px-8 py-4 backdrop-blur-sm">
+                <Play className="mr-2 w-5 h-5" /> Watch Demo
+              </Button>
             </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-20 bg-slate-50 dark:bg-slate-800/50">
-          <div className="container mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900 dark:text-white">
-                Advanced Learning Technology
-              </h2>
-              <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-                Leverage cutting-edge algorithms and research-backed methodologies
-                to optimize learning outcomes and cognitive performance.
-              </p>
-            </motion.div>
-
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
-                className="space-y-6"
-              >
-                {features.map((feature, index) => (
-                  <motion.div
-                    key={index}
-                    className={`p-6 rounded-xl border transition-all duration-300 cursor-pointer ${
-                      activeFeature === index
-                        ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800 shadow-lg'
-                        : 'bg-white/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                    }`}
-                    onClick={() => setActiveFeature(index)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-start space-x-4">
-                      <div className={`p-3 rounded-lg ${
-                        activeFeature === index
-                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
-                      }`}>
-                        {feature.icon}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
-                          {feature.title}
-                        </h3>
-                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                          {feature.description}
-                        </p>
-                        <div className="mt-3">
-                          <Badge variant="secondary" className="text-xs">
-                            {feature.metrics}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
-                className="space-y-8"
-              >
-                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-slate-900 dark:text-white">
-                      <TrendingUp className="w-5 h-5 mr-3 text-blue-600" />
-                      Performance Analytics
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={quizData}>
-                          <XAxis dataKey="subject" />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="performance" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-slate-900 dark:text-white">
-                      <Brain className="w-5 h-5 mr-3 text-purple-600" />
-                      Cognitive Assessment
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={cognitiveData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            label={({ name, value }) => `${name}: ${value}%`}
-                          >
-                            {cognitiveData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <section className="py-20 bg-white dark:bg-slate-900">
-          <div className="container mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900 dark:text-white">
-                Proven Results
-              </h2>
-              <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-                Educational professionals and students trust StudyFlow to enhance learning outcomes
-                and optimize cognitive performance.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              variants={staggerContainer}
-              viewport={{ once: true }}
-              className="grid md:grid-cols-3 gap-8"
-            >
-              {[
-                {
-                  quote: "StudyFlow's adaptive assessment system has revolutionized how we understand student learning patterns. The cognitive insights are invaluable for curriculum development.",
-                  author: "Dr. Sarah Chen",
-                  role: "Educational Psychology Professor, Stanford University",
-                  avatar: "https://randomuser.me/api/portraits/women/32.jpg"
-                },
-                {
-                  quote: "The platform's evidence-based approach to learning optimization has significantly improved our students' retention rates and academic performance metrics.",
-                  author: "Prof. Michael Rodriguez",
-                  role: "Dean of Academic Affairs, MIT",
-                  avatar: "https://randomuser.me/api/portraits/men/45.jpg"
-                },
-                {
-                  quote: "As a researcher in cognitive science, I'm impressed by the sophisticated algorithms and the practical application of learning theory in StudyFlow's platform.",
-                  author: "Dr. Emily Watson",
-                  role: "Cognitive Science Research Director, Harvard",
-                  avatar: "https://randomuser.me/api/portraits/women/68.jpg"
-                }
-              ].map((testimonial, index) => (
-                <motion.div key={index} variants={scaleIn}>
-                  <Card className="h-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-lg transition-shadow duration-300">
-                    <CardContent className="p-8">
-                      <blockquote className="text-slate-700 dark:text-slate-300 mb-6 text-lg leading-relaxed">
-                        "{testimonial.quote}"
-                      </blockquote>
-                      <div className="flex items-center">
-                        <Image
-                          src={testimonial.avatar}
-                          alt={testimonial.author}
-                          width={48}
-                          height={48}
-                          className="rounded-full mr-4"
-                        />
-                        <div>
-                          <div className="font-semibold text-slate-900 dark:text-white">
-                            {testimonial.author}
-                          </div>
-                          <div className="text-slate-600 dark:text-slate-400 text-sm">
-                            {testimonial.role}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+            {/* Stats */}
+            <motion.div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto" variants={stagger} initial="initial" animate={heroInView ? 'animate' : 'initial'}>
+              {[{ label: 'Active Projects', value: '2,500+', icon: Rocket }, { label: 'Research Papers', value: '15K+', icon: BookOpen }, { label: 'Success Rate', value: '94%', icon: Award }].map((s, i) => (
+                <motion.div key={i} variants={fadeInUp} className="text-center">
+                  <div className="flex items-center justify-center mb-2"><s.icon className="w-6 h-6 text-indigo-300 mr-2" /><span className="text-2xl font-bold">{s.value}</span></div>
+                  <p className="text-gray-400">{s.label}</p>
                 </motion.div>
               ))}
             </motion.div>
-          </div>
-        </section>
+          </motion.div>
+        </div>
+        <motion.div className="absolute bottom-8 left-1/2 -translate-x-1/2" animate={{ y: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+          <ChevronDown className="w-6 h-6 text-gray-400" />
+        </motion.div>
+      </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-slate-900 dark:bg-slate-800 text-white relative overflow-hidden">
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 1 }}
-            viewport={{ once: true }}
-          />
-          <div className="container mx-auto px-6 text-center relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-4xl md:text-6xl font-bold mb-6">
-                Ready to Transform Learning?
-              </h2>
-              <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto">
-                Join leading educational institutions in leveraging advanced learning analytics
-                and cognitive assessment technology.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-white text-slate-900 hover:bg-slate-100 px-8 py-4 rounded-lg text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <Link href="/sign-up">
-                    <GraduationCap className="w-5 h-5 mr-2" />
-                    Get Started Today
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="border-white text-white hover:bg-white hover:text-slate-900 px-8 py-4 rounded-lg text-lg font-medium transition-all duration-300"
-                >
-                  <Link href="/contact">
-                    <Users className="w-5 h-5 mr-2" />
-                    Contact Sales
-                  </Link>
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-      </main>
+      {/* Features */}
+      <section id="features" ref={featuresRef} className="py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} animate={featuresInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Revolutionary Campus <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Innovation</span></h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">Five integrated pillars that transform how students learn, collaborate, and succeed.</p>
+          </motion.div>
 
-      <FloatingChatbot />
-    </>
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" variants={stagger} initial="initial" animate={featuresInView ? 'animate' : 'initial'}>
+            {[{ icon: Users, title: 'Project Execution & Proof', desc: 'Milestone-driven rooms with blockchain-verified diaries', list: ['Collaboration', 'Milestones', 'Supervisor reviews', 'Verifiable logs'] }, { icon: Brain, title: 'AI-Powered Learning', desc: 'Ask-Your-Library RAG and design helpers', list: ['Research assistance', 'Method comparison', 'Repro checks', 'Study planning'] }, { icon: TrendingUp, title: 'ScholarPulse Engine', desc: 'Research-trend analysis guiding next steps', list: ['Topic velocity', 'Collab targets', 'Grants', 'Focus map'] }, { icon: Target, title: 'CareerPulse Engine', desc: 'Job-market intelligence for personal skill paths', list: ['Demand analysis', 'Skill gaps', 'Portfolio planning', 'Company match'] }, { icon: Shield, title: 'Blockchain Integrity', desc: 'Immutable proof & provenance badges', list: ['Tamper-proof', 'Dataset/code hashes', 'Badges', 'Trust network'] }, { icon: Eye, title: 'Discovery & Outcomes', desc: 'Verified feed & project showcases', list: ['Portfolios', 'Achievement feed', 'Archive search', 'Impact tracking'] }].map((f, i) => (
+              <motion.div key={i} variants={scaleIn}>
+                <Card className="h-full bg-gradient-to-br from-slate-900/40 to-slate-800/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition group hover:shadow-xl hover:-translate-y-1">
+                  <CardContent className="p-6 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-400/5 to-slate-300/5 opacity-0 group-hover:opacity-100 transition" />
+                    <div className="relative z-10">
+                      <div className="flex items-center mb-4">
+                        <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition"><f.icon className="w-6 h-6 text-indigo-300" /></div>
+                        <h3 className="text-xl font-semibold">{f.title}</h3>
+                      </div>
+                      <p className="text-gray-300 mb-4">{f.desc}</p>
+                      <ul className="space-y-2">
+                        {f.list.map((li, idx) => (
+                          <li key={idx} className="flex items-center text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-emerald-300 mr-2" />{li}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24 bg-gradient-to-r from-gray-900/30 to-gray-800/30">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">How <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">CPN-AI</span> Works</h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">A seamless flow from idea to career success</p>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[{ step: '01', title: 'Create Project Room', desc: 'Milestones, tasks & supervisor workflows', icon: Users }, { step: '02', title: 'Build & Document', desc: 'AI assistance & verifiable diary', icon: Brain }, { step: '03', title: 'Strategic Insights', desc: 'ScholarPulse & CareerPulse guidance', icon: TrendingUp }, { step: '04', title: 'Showcase & Succeed', desc: 'Publish verified achievements', icon: Award }].map((s, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: i * 0.1 }} viewport={{ once: true }} className="text-center">
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-indigo-600 to-slate-600 rounded-full flex items-center justify-center mx-auto mb-4"><s.icon className="w-8 h-8 text-white" /></div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-sm font-bold text-gray-400">{s.step}</div>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">{s.title}</h3>
+                <p className="text-gray-300">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section ref={statsRef} className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/20 to-slate-800/10 -z-10" />
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" variants={stagger} initial="initial" animate={statsInView ? 'animate' : 'initial'}>
+            {[{ value: '50K+', label: 'Students Empowered', icon: Users }, { value: '2.5K+', label: 'Active Projects', icon: Rocket }, { value: '94%', label: 'Success Rate', icon: TrendingUp }, { value: '15K+', label: 'Research Papers', icon: BookOpen }].map((s, i) => (
+              <motion.div key={i} variants={fadeInUp}>
+                <s.icon className="w-8 h-8 text-indigo-300 mx-auto mb-4" />
+                <div className="text-4xl font-bold mb-2">{s.value}</div>
+                <div className="text-gray-300">{s.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section id="testimonials" ref={testimonialsRef} className="py-24 bg-gradient-to-r from-gray-900/50 to-gray-800/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} animate={testimonialsInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Success <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Stories</span></h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">Real students, real results, real impact</p>
+          </motion.div>
+          <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-8" variants={stagger} initial="initial" animate={testimonialsInView ? 'animate' : 'initial'}>
+            {[{ name: 'Sarah Chen', role: 'CS PhD Student', uni: 'Stanford', quote: 'ScholarPulse helped me identify research gaps and publish 3 papers.' }, { name: 'Marcus Johnson', role: 'Engineering Student', uni: 'MIT', quote: 'The verifiable diary landed me an internship at Google.' }, { name: 'Dr. Priya Patel', role: 'Research Supervisor', uni: 'UC Berkeley', quote: 'Milestone tracking lets me guide 20+ projects effortlessly.' }].map((t, i) => (
+              <motion.div key={i} variants={scaleIn}>
+                <Card className="h-full bg-gradient-to-br from-slate-800/50 to-slate-700/40 backdrop-blur-xl border-white/10 hover:border-white/20 transition">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4"><div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-slate-600 rounded-full flex items-center justify-center text-white font-bold mr-4">{t.name.split(' ').map(n => n[0]).join('')}</div><div><h4 className="font-semibold">{t.name}</h4><p className="text-sm text-gray-400">{t.role}</p><p className="text-xs text-gray-400">{t.uni}</p></div></div>
+                    <div className="flex mb-4">{Array(5).fill(0).map((_, idx) => <Star key={idx} className="w-4 h-4 text-yellow-400 fill-current" />)}</div>
+                    <p className="text-gray-300 italic">"{t.quote}"</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/30 to-slate-800/20 -z-10" />
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your <span className="bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">Academic Journey?</span></h2>
+            <p className="text-xl text-gray-300 mb-8">Join thousands already building the future with CPN-AI.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/signup"><Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 px-8 py-4 shadow-xl hover:scale-105 transition">Start Free Trial <ArrowRight className="ml-2 w-5 h-5" /></Button></Link>
+              <Button size="lg" variant="outline" className="border-white/10 text-white hover:bg-white/5 px-8 py-4 backdrop-blur-sm"><Coffee className="mr-2 w-5 h-5" /> Schedule Demo</Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+    </div>
   );
 }
