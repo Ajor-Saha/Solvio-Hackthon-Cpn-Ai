@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, isNull, or, sql, SQL } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { db } from '../db';
@@ -6,10 +6,7 @@ import { researchTable } from '../db/schema';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
 
-/**
- * POST /api/research
- * Create new research (admin/faculty only)
- */
+
 export const createResearch = asyncHandler(async (req: Request, res: Response) => {
   try {
     let {

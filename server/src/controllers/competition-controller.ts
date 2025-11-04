@@ -6,10 +6,7 @@ import { competitionTable } from '../db/schema';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
 
-/**
- * POST /api/competitions
- * Create new competition (admin/faculty only)
- */
+
 export const createCompetition = asyncHandler(async (req: Request, res: Response) => {
   try {
     let {

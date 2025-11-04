@@ -33,7 +33,7 @@ async function updatePostStatuses() {
         eq(jobPostingTable.status, 'draft'),
         isNull(jobPostingTable.deletedAt)
       ));
-    console.log(`✅ Updated ${jobsUpdated.rowCount || 0} jobs from 'draft' to 'active'`);
+    console.log(`Updated ${jobsUpdated.rowCount || 0} jobs from 'draft' to 'active'`);
 
     // Update Competitions from 'draft' to 'active'
     const competitionsUpdated = await db

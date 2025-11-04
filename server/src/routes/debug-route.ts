@@ -1,12 +1,11 @@
-import { Router } from 'express';
-import { Request, Response } from 'express';
-import { db } from '../db';
 import { count, isNull } from 'drizzle-orm';
+import { Request, Response, Router } from 'express';
+import { db } from '../db';
 import {
-  jobPostingTable,
-  competitionTable,
   achievementTable,
+  competitionTable,
   higherStudyTable,
+  jobPostingTable,
   researchTable
 } from '../db/schema';
 import { ApiResponse } from '../utils/api-response';
@@ -14,7 +13,6 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const debugRouter = Router();
 
-// Debug endpoint to check database contents
 debugRouter.get('/database', asyncHandler(async (req: Request, res: Response) => {
   try {
     const [
