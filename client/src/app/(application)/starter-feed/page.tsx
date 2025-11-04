@@ -10,16 +10,20 @@ import { env } from "@/config/env";
 import {
   Award,
   BookOpen,
+  Brain,
   Briefcase,
   Building,
   Calendar,
   ExternalLink,
   Filter,
   GraduationCap,
+  Lightbulb,
   MapPin,
   Newspaper,
   Search,
-  Trophy
+  Sparkles,
+  Trophy,
+  X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -114,8 +118,57 @@ export default function InsightFeedPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<AnnouncementType>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [showInsightAI, setShowInsightAI] = useState(false);
 
   const router = useRouter();
+
+  // Static InsightAI suggestions based on current semester
+  const insightAISuggestions = [
+    {
+      type: "hackathon",
+      title: "NASA Space Apps Challenge 2024",
+      description: "Perfect for your Software Engineering and Database courses! Build space-related solutions using real NASA data.",
+      reason: "Based on your CSE-401 Software Engineering and CSE-301 Database courses",
+      action: "Register Now",
+      urgency: "high",
+      deadline: "Dec 15, 2024",
+      icon: <Trophy className="w-5 h-5" />,
+      color: "from-yellow-500 to-orange-500"
+    },
+    {
+      type: "research",
+      title: "Machine Learning in Healthcare - Recent Advances",
+      description: "Cutting-edge research paper that aligns with your AI/ML coursework. Explores neural networks in medical diagnosis.",
+      reason: "Recommended for your CSE-425 Machine Learning course",
+      action: "Read Paper",
+      urgency: "medium",
+      deadline: "Suggested reading",
+      icon: <BookOpen className="w-5 h-5" />,
+      color: "from-blue-500 to-indigo-500"
+    },
+    {
+      type: "internship",
+      title: "Google Summer of Code 2024",
+      description: "Open source contribution opportunity. Perfect for building your portfolio while working on real-world projects.",
+      reason: "Matches your programming skills and current semester projects",
+      action: "Apply Now",
+      urgency: "high",
+      deadline: "Jan 30, 2024",
+      icon: <Briefcase className="w-5 h-5" />,
+      color: "from-green-500 to-emerald-500"
+    },
+    {
+      type: "scholarship",
+      title: "Women in Tech Scholarship Program",
+      description: "Merit-based scholarship for outstanding CS students. Includes mentorship and networking opportunities.",
+      reason: "Based on your academic performance and field of study",
+      action: "Learn More",
+      urgency: "medium",
+      deadline: "Feb 28, 2024",
+      icon: <GraduationCap className="w-5 h-5" />,
+      color: "from-purple-500 to-pink-500"
+    }
+  ];
 
   useEffect(() => {
     const fetchAllAnnouncements = async () => {
@@ -660,14 +713,26 @@ export default function InsightFeedPage() {
     <div className="min-h-screen w-full">
       <div className="max-w-6xl mx-auto px-4 py-10">
         {/* Header */}
-        <div className="mb-8 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
-            <Newspaper className="w-5 h-5" />
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
+              <Newspaper className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">InsightFeed</h1>
+              <p className="text-sm text-muted-foreground">Latest announcements, opportunities, and updates</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">InsightFeed</h1>
-            <p className="text-sm text-muted-foreground">Latest announcements, opportunities, and updates</p>
-          </div>
+
+          {/* InsightAI Button */}
+          <Button
+            onClick={() => setShowInsightAI(true)}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          >
+            <Brain className="w-4 h-4 mr-2" />
+            <Sparkles className="w-4 h-4 mr-1" />
+            InsightAI
+          </Button>
         </div>
 
         {/* Filters */}
@@ -751,6 +816,128 @@ export default function InsightFeedPage() {
               <span> matching your filters</span>
             )}
         </div>
+        )}
+
+        {/* InsightAI Modal */}
+        {showInsightAI && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                      <Brain className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold flex items-center gap-2">
+                        <Sparkles className="w-6 h-6" />
+                        InsightAI Recommendations
+                      </h2>
+                      <p className="text-purple-100">Personalized suggestions based on your current semester</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowInsightAI(false)}
+                    className="text-white hover:bg-white/20 rounded-full w-10 h-10 p-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                <div className="mb-6 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-full text-sm font-medium">
+                    <Lightbulb className="w-4 h-4 text-purple-600" />
+                    AI-powered insights for CSE 7th Semester students
+                  </div>
+                </div>
+
+                <div className="grid gap-6">
+                  {insightAISuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
+                    >
+                      {/* Gradient Background */}
+                      <div className={`absolute inset-0 bg-gradient-to-r ${suggestion.color} opacity-5 group-hover:opacity-10 transition-opacity`} />
+
+                      <div className="relative p-6">
+                        <div className="flex items-start gap-4">
+                          {/* Icon */}
+                          <div className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-r ${suggestion.color} text-white flex items-center justify-center shadow-lg`}>
+                            {suggestion.icon}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                              <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
+                                  {suggestion.title}
+                                </h3>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge
+                                    variant={suggestion.urgency === 'high' ? 'destructive' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {suggestion.urgency === 'high' ? '🔥 High Priority' : '💡 Recommended'}
+                                  </Badge>
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {suggestion.deadline}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                              {suggestion.description}
+                            </p>
+
+                            {/* AI Reasoning */}
+                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-4 mb-4">
+                              <div className="flex items-start gap-2">
+                                <Brain className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-sm font-medium text-purple-800 dark:text-purple-200 mb-1">
+                                    AI Insight:
+                                  </p>
+                                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                                    {suggestion.reason}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <Button
+                              className={`bg-gradient-to-r ${suggestion.color} text-white hover:shadow-lg transition-all duration-300 transform hover:scale-105`}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              {suggestion.action}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="mt-8 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400">
+                    <Sparkles className="w-4 h-4" />
+                    Suggestions refresh weekly based on your academic progress
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
