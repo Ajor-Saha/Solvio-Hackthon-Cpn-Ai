@@ -19,6 +19,7 @@ import competitionRouter from './routes/competition-routes';
 import higherStudyRouter from './routes/higher-study-routes';
 import jobRouter from './routes/job-routes';
 import researchRouter from './routes/research-routes';
+import debugRouter from './routes/debug-route';
 
 dotenv.config();
 
@@ -70,6 +71,9 @@ app.use('/api/higher-studies', higherStudyRouter);
 app.use('/api/jobs', jobRouter);
 app.use('/api/research', researchRouter);
 // End announcement routes
+
+// Debug route (remove in production)
+app.use('/api/debug', debugRouter);
 
 // AI Assistant routes
 app.use('/api/ai', ai_router);

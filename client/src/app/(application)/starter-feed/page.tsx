@@ -1,9 +1,26 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Axios } from "@/config/axios";
-import { ExternalLink, Globe, Newspaper, Tag } from "lucide-react";
+import { env } from "@/config/env";
+import {
+  Award,
+  BookOpen,
+  Briefcase,
+  Building,
+  Calendar,
+  ExternalLink,
+  Filter,
+  GraduationCap,
+  MapPin,
+  Newspaper,
+  Search,
+  Trophy
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -17,97 +34,659 @@ interface ResourceItem {
   createdAt: string;
 }
 
+interface Job {
+  jobId: string;
+  title: string;
+  description: string;
+  companyName?: string;
+  location?: string;
+  jobType?: string;
+  externalUrl: string;
+  applicationDeadline?: string;
+  status: string;
+  createdAt: string;
+}
+
+interface Competition {
+  competitionId: string;
+  title: string;
+  description: string;
+  type?: string;
+  organizerName?: string;
+  location?: string;
+  eventDate?: string;
+  registrationDeadline?: string;
+  externalUrl: string;
+  status: string;
+  createdAt: string;
+}
+
+interface Achievement {
+  achievementId: string;
+  title: string;
+  description: string;
+  achievementType?: string;
+  awardedTo?: string;
+  awardingOrganization?: string;
+  achievementDate?: string;
+  imageUrl?: string;
+  status: string;
+  createdAt: string;
+}
+
+interface Research {
+  researchId: string;
+  title: string;
+  description?: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  publicationUrl?: string;
+  createdAt: string;
+}
+
+interface HigherStudy {
+  higherStudyId: string;
+  title: string;
+  description: string;
+  institution: string;
+  studyType?: string;
+  location?: string;
+  fieldOfStudy?: string;
+  applicationDeadline?: string;
+  applicationUrl: string;
+  status: string;
+  createdAt: string;
+}
+
+type AnnouncementType = 'all' | 'jobs' | 'competitions' | 'achievements' | 'research' | 'higher-studies';
+type StatusFilter = 'all' | 'active' | 'ongoing' | 'completed';
+
 export default function StarterFeedPage() {
-  const [items, setItems] = useState<ResourceItem[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [research, setResearch] = useState<Research[]>([]);
+  const [higherStudies, setHigherStudies] = useState<HigherStudy[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<AnnouncementType>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
   const router = useRouter();
 
   useEffect(() => {
-    const fetchFeed = async () => {
+    const fetchAllAnnouncements = async () => {
       try {
-        const res = await Axios.get("/api/topic/starter-feed");
-        setItems(res.data.data || []);
-      } catch (e) {
-        console.error("Failed to load starter feed", e);
+        setLoading(true);
+
+        // FIRST - Debug database check
+        try {
+          const debugRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/debug/database`);
+          console.log("🔍 DEBUG - Database contents:", debugRes.data);
+        } catch (error) {
+          console.log("❌ DEBUG endpoint not available:", error.message);
+        }
+
+        // Fetch jobs using public endpoint (students/faculty can access)
+        try {
+          const jobsRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/jobs`, {
+            params: { jobStatus: "all", limit: 100 }
+          });
+          console.log("Jobs API Response:", jobsRes.data);
+          let jobsData = [];
+          if (jobsRes.data?.success && jobsRes.data?.data?.data) {
+            // The jobs array is at response.data.data.data
+            jobsData = jobsRes.data.data.data;
+          }
+          console.log("✅ Jobs extracted:", jobsData.length, "jobs");
+          setJobs(Array.isArray(jobsData) ? jobsData : []);
+        } catch (error) {
+          console.log("Jobs API not available:", error);
+          setJobs([]);
+        }
+
+        // Fetch competitions using public endpoint
+        try {
+          const competitionsRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/competitions`, {
+            params: { status: "active", limit: 100 }
+          });
+          console.log("Competitions API Response:", competitionsRes.data);
+          let competitionsData = [];
+          if (competitionsRes.data?.success && competitionsRes.data?.data?.data) {
+            // The competitions array is at response.data.data.data
+            competitionsData = competitionsRes.data.data.data;
+          }
+          console.log("✅ Competitions extracted:", competitionsData.length, "competitions");
+          setCompetitions(Array.isArray(competitionsData) ? competitionsData : []);
+        } catch (error) {
+          console.log("Competitions API not available:", error);
+          setCompetitions([]);
+        }
+
+        // Fetch achievements using public endpoint
+        try {
+          const achievementsRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/achievements`, {
+            params: { status: "published", limit: 100 }
+          });
+          console.log("Achievements API Response:", achievementsRes.data);
+          let achievementsData = [];
+          if (achievementsRes.data?.success && achievementsRes.data?.data?.data) {
+            // The achievements array is at response.data.data.data
+            achievementsData = achievementsRes.data.data.data;
+          }
+          console.log("✅ Achievements extracted:", achievementsData.length, "achievements");
+          setAchievements(Array.isArray(achievementsData) ? achievementsData : []);
+        } catch (error) {
+          console.log("Achievements API not available:", error);
+          setAchievements([]);
+        }
+
+        // Fetch research using public endpoint
+        try {
+          const researchRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/research`, {
+            params: { status: "published", limit: 100 }
+          });
+          console.log("Research API Response:", researchRes.data);
+          let researchData = [];
+          if (researchRes.data?.success && researchRes.data?.data?.data) {
+            // The research array is at response.data.data.data
+            researchData = researchRes.data.data.data;
+          }
+          console.log("✅ Research extracted:", researchData.length, "research");
+          setResearch(Array.isArray(researchData) ? researchData : []);
+        } catch (error) {
+          console.log("Research API not available:", error);
+          setResearch([]);
+        }
+
+        // Fetch higher studies using public endpoint
+        try {
+          const higherStudiesRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/higher-studies`, {
+            params: { status: "active", limit: 100 }
+          });
+          console.log("Higher Studies API Response:", higherStudiesRes.data);
+          let higherStudiesData = [];
+          if (higherStudiesRes.data?.success && higherStudiesRes.data?.data?.data) {
+            // The higher studies array is at response.data.data.data
+            higherStudiesData = higherStudiesRes.data.data.data;
+          }
+          console.log("✅ Higher Studies extracted:", higherStudiesData.length, "higher studies");
+          setHigherStudies(Array.isArray(higherStudiesData) ? higherStudiesData : []);
+        } catch (error) {
+          console.log("Higher Studies API not available:", error);
+          setHigherStudies([]);
+        }
+
+      } catch (error) {
+        console.error("Failed to load announcements:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchFeed();
+
+    fetchAllAnnouncements();
   }, []);
+
+  // Combine and filter all announcements
+  const getAllAnnouncements = () => {
+    const allItems: Array<{
+      id: string;
+      type: AnnouncementType;
+      title: string;
+      description: string;
+      status: string;
+      createdAt: string;
+      data: Job | Competition | Achievement | Research | HigherStudy;
+    }> = [];
+
+    // Ensure we have arrays and add jobs
+    if ((typeFilter === "all" || typeFilter === "jobs") && Array.isArray(jobs)) {
+      jobs.forEach(job => {
+        if (job && job.jobId) {
+          allItems.push({
+            id: job.jobId,
+            type: "jobs",
+            title: job.title || "Untitled Job",
+            description: job.description || "",
+            status: job.status || "draft",
+            createdAt: job.createdAt || new Date().toISOString(),
+            data: job
+          });
+        }
+      });
+    }
+
+    // Ensure we have arrays and add competitions
+    if ((typeFilter === "all" || typeFilter === "competitions") && Array.isArray(competitions)) {
+      competitions.forEach(comp => {
+        if (comp && comp.competitionId) {
+          allItems.push({
+            id: comp.competitionId,
+            type: "competitions",
+            title: comp.title || "Untitled Competition",
+            description: comp.description || "",
+            status: comp.status || "draft",
+            createdAt: comp.createdAt || new Date().toISOString(),
+            data: comp
+          });
+        }
+      });
+    }
+
+    // Ensure we have arrays and add achievements
+    if ((typeFilter === "all" || typeFilter === "achievements") && Array.isArray(achievements)) {
+      achievements.forEach(ach => {
+        if (ach && ach.achievementId) {
+          allItems.push({
+            id: ach.achievementId,
+            type: "achievements",
+            title: ach.title || "Untitled Achievement",
+            description: ach.description || "",
+            status: ach.status || "draft",
+            createdAt: ach.createdAt || new Date().toISOString(),
+            data: ach
+          });
+        }
+      });
+    }
+
+    // Ensure we have arrays and add research
+    if ((typeFilter === "all" || typeFilter === "research") && Array.isArray(research)) {
+      research.forEach(res => {
+        if (res && res.researchId) {
+          allItems.push({
+            id: res.researchId,
+            type: "research",
+            title: res.title || "Untitled Research",
+            description: res.description || "",
+            status: res.status || "draft",
+            createdAt: res.createdAt || new Date().toISOString(),
+            data: res
+          });
+        }
+      });
+    }
+
+    // Ensure we have arrays and add higher studies
+    if ((typeFilter === "all" || typeFilter === "higher-studies") && Array.isArray(higherStudies)) {
+      higherStudies.forEach(hs => {
+        if (hs && hs.higherStudyId) {
+          allItems.push({
+            id: hs.higherStudyId,
+            type: "higher-studies",
+            title: hs.title || "Untitled Higher Study",
+            description: hs.description || "",
+            status: hs.status || "draft",
+            createdAt: hs.createdAt || new Date().toISOString(),
+            data: hs
+          });
+        }
+      });
+    }
+
+    // Filter by search term
+    let filtered = allItems.filter(item =>
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(item => {
+        if (statusFilter === "active") return item.status === "active";
+        if (statusFilter === "ongoing") return item.status === "ongoing" || item.status === "active";
+        if (statusFilter === "completed") return item.status === "completed" || item.status === "closed";
+        return true;
+      });
+    }
+
+    // Sort by creation date (newest first)
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  const getTypeIcon = (type: AnnouncementType) => {
+    switch (type) {
+      case "jobs": return <Briefcase className="w-4 h-4" />;
+      case "competitions": return <Trophy className="w-4 h-4" />;
+      case "achievements": return <Award className="w-4 h-4" />;
+      case "research": return <BookOpen className="w-4 h-4" />;
+      case "higher-studies": return <GraduationCap className="w-4 h-4" />;
+      default: return <Newspaper className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeColor = (type: AnnouncementType) => {
+    switch (type) {
+      case "jobs": return "bg-blue-500";
+      case "competitions": return "bg-orange-500";
+      case "achievements": return "bg-green-500";
+      case "research": return "bg-purple-500";
+      case "higher-studies": return "bg-indigo-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const renderAnnouncementCard = (item: ReturnType<typeof getAllAnnouncements>[0]) => {
+    const { type, data } = item;
+
+    return (
+      <article key={item.id} className="py-6 border-b border-border last:border-b-0">
+        <div className="flex items-start gap-4">
+          <div className={`mt-1 w-8 h-8 rounded-full ${getTypeColor(type)} flex items-center justify-center text-white`}>
+            {getTypeIcon(type)}
+          </div>
+          <div className="flex-1 space-y-3">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-semibold leading-snug">{item.title}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline" className="text-xs">
+                    {type.replace("-", " ").toUpperCase()}
+                  </Badge>
+                  <Badge variant={item.status === "active" ? "default" : "secondary"} className="text-xs">
+                    {item.status.toUpperCase()}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="prose prose-sm max-w-none">
+              <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                {item.description}
+              </p>
+            </div>
+
+            {/* Type-specific details */}
+            <div className="space-y-2">
+              {type === "jobs" && (
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  {(data as Job).companyName && (
+                    <span className="flex items-center gap-1">
+                      <Building className="w-3 h-3" />
+                      {(data as Job).companyName}
+                    </span>
+                  )}
+                  {(data as Job).location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {(data as Job).location}
+                    </span>
+                  )}
+                  {(data as Job).jobType && (
+                    <Badge variant="outline" className="text-xs">
+                      {(data as Job).jobType?.replace("_", " ")}
+                    </Badge>
+                  )}
+                  {(data as Job).applicationDeadline && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Apply by: {new Date((data as Job).applicationDeadline!).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {type === "competitions" && (
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  {(data as Competition).organizerName && (
+                    <span className="flex items-center gap-1">
+                      <Building className="w-3 h-3" />
+                      {(data as Competition).organizerName}
+                    </span>
+                  )}
+                  {(data as Competition).location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {(data as Competition).location}
+                    </span>
+                  )}
+                  {(data as Competition).type && (
+                    <Badge variant="outline" className="text-xs">
+                      {(data as Competition).type?.replace("_", " ")}
+                    </Badge>
+                  )}
+                  {(data as Competition).eventDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Event: {new Date((data as Competition).eventDate!).toLocaleDateString()}
+                    </span>
+                  )}
+                  {(data as Competition).registrationDeadline && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Register by: {new Date((data as Competition).registrationDeadline!).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {type === "achievements" && (
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  {(data as Achievement).awardedTo && (
+                    <span className="flex items-center gap-1">
+                      <Award className="w-3 h-3" />
+                      Awarded to: {(data as Achievement).awardedTo}
+                    </span>
+                  )}
+                  {(data as Achievement).awardingOrganization && (
+                    <span className="flex items-center gap-1">
+                      <Building className="w-3 h-3" />
+                      {(data as Achievement).awardingOrganization}
+                    </span>
+                  )}
+                  {(data as Achievement).achievementType && (
+                    <Badge variant="outline" className="text-xs">
+                      {(data as Achievement).achievementType?.replace("_", " ")}
+                    </Badge>
+                  )}
+                  {(data as Achievement).achievementDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {new Date((data as Achievement).achievementDate!).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {type === "research" && (
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  {(data as Research).startDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Started: {new Date((data as Research).startDate!).toLocaleDateString()}
+                    </span>
+                  )}
+                  {(data as Research).endDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      End: {new Date((data as Research).endDate!).toLocaleDateString()}
+                    </span>
+                  )}
+                  {(data as Research).publicationUrl && (
+                    <a
+                      href={(data as Research).publicationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 hover:text-blue-600"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Publication
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {type === "higher-studies" && (
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Building className="w-3 h-3" />
+                    {(data as HigherStudy).institution}
+                  </span>
+                  {(data as HigherStudy).location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {(data as HigherStudy).location}
+                    </span>
+                  )}
+                  {(data as HigherStudy).studyType && (
+                    <Badge variant="outline" className="text-xs">
+                      {(data as HigherStudy).studyType?.replace("_", " ")}
+                    </Badge>
+                  )}
+                  {(data as HigherStudy).fieldOfStudy && (
+                    <Badge variant="outline" className="text-xs">
+                      {(data as HigherStudy).fieldOfStudy}
+                    </Badge>
+                  )}
+                  {(data as HigherStudy).applicationDeadline && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Apply by: {new Date((data as HigherStudy).applicationDeadline!).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 pt-2">
+              {(type === "jobs" && (data as Job).externalUrl) && (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={(data as Job).externalUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Apply Now
+                  </a>
+                </Button>
+              )}
+              {(type === "competitions" && (data as Competition).externalUrl) && (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={(data as Competition).externalUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Register
+                  </a>
+                </Button>
+              )}
+              {(type === "higher-studies" && (data as HigherStudy).applicationUrl) && (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={(data as HigherStudy).applicationUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Apply
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  };
+
+  const filteredAnnouncements = getAllAnnouncements();
 
   return (
     <div className="min-h-screen w-full">
       <div className="max-w-6xl mx-auto px-4 py-10">
+        {/* Header */}
         <div className="mb-8 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">
             <Newspaper className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">StarterFeed</h1>
-            <p className="text-sm text-muted-foreground">Curated learning resources from your topics</p>
+            <p className="text-sm text-muted-foreground">Latest announcements, opportunities, and updates</p>
           </div>
         </div>
 
+        {/* Filters */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search announcements..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Select value={typeFilter} onValueChange={(value: AnnouncementType) => setTypeFilter(value)}>
+              <SelectTrigger className="w-40">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="jobs">Jobs</SelectItem>
+                <SelectItem value="competitions">Competitions</SelectItem>
+                <SelectItem value="achievements">Achievements</SelectItem>
+                <SelectItem value="research">Research</SelectItem>
+                <SelectItem value="higher-studies">Higher Studies</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="ongoing">Ongoing</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Content */}
         {loading ? (
           <div className="space-y-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-3">
+              <div key={i} className="space-y-3 p-6 border border-border rounded-lg">
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-2/3" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
               </div>
             ))}
           </div>
+        ) : filteredAnnouncements.length === 0 ? (
+          <div className="text-center py-12">
+            <Newspaper className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No announcements found</h3>
+            <p className="text-muted-foreground">
+              {searchTerm || typeFilter !== "all" || statusFilter !== "all"
+                ? "Try adjusting your filters to see more results."
+                : "Check back later for new announcements and opportunities."}
+            </p>
+          </div>
         ) : (
-          <div className="divide-y divide-border">
-            {items.map((item) => (
-              <article key={item.resourceId} className="py-6">
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 hidden sm:block w-2 h-2 rounded-full bg-blue-500" />
-                  <div className="flex-1">
-                    <h2 className="text-lg font-semibold leading-snug">
-                      <a href={item.url} target="_blank" rel="noreferrer" className="hover:underline">
-                        {item.resourceTitle}
-                      </a>
-                    </h2>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <Badge variant="outline" className="gap-1">
-                        <Tag className="w-3 h-3" />
-                        {item.topicName}
-                      </Badge>
-                      <a href={item.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-blue-600">
-                        <ExternalLink className="w-3 h-3" />
-                        Visit
-                      </a>
-                      <span className="inline-flex items-center gap-1">
-                        <Globe className="w-3 h-3" />
-                        {new URL(item.url).hostname}
-                      </span>
-                      <span className="ml-auto text-xs">
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {item.description && (
-                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
+          <div className="space-y-0">
+            {filteredAnnouncements.map(renderAnnouncementCard)}
           </div>
         )}
 
-        <div className="mt-10 flex justify-end">
-          <button
-            onClick={() => router.push("/sign-in")}
-            className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm"
-          >
-            More
-          </button>
-        </div>
+        {/* Stats */}
+        {!loading && filteredAnnouncements.length > 0 && (
+          <div className="mt-8 text-center text-sm text-muted-foreground">
+            Showing {filteredAnnouncements.length} announcement{filteredAnnouncements.length !== 1 ? 's' : ''}
+            {(searchTerm || typeFilter !== "all" || statusFilter !== "all") && (
+              <span> matching your filters</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

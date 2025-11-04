@@ -16,7 +16,7 @@ import {
 interface CompetitionCardProps {
   competition: Competition;
   onEdit?: (competition: Competition) => void;
-  onDelete?: (competitionId: string) => void;
+  onDelete?: (competition: Competition) => void;
 }
 
 export function CompetitionCard({
@@ -112,11 +112,21 @@ export function CompetitionCard({
               View
             </Button>
           </Link>
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(competition)}
+              className="text-xs"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </Button>
+          )}
           {onDelete && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(competition.competitionId)}
+              onClick={() => onDelete(competition)}
               className="text-xs"
             >
               <Trash2 className="w-3.5 h-3.5 text-destructive" />

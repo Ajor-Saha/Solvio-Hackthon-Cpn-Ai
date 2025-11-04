@@ -4,8 +4,12 @@ import {
   deleteResearch,
   getResearchById,
   getResearchStats,
+<<<<<<< Updated upstream
   listResearches,
   updateResearch,
+=======
+  listAdminResearch,
+>>>>>>> Stashed changes
 } from '../controllers/research-controller';
 import { getCourseResearch } from '../controllers/research-controllers';
 import { verifyJWT } from '../middleware/auth-middleware';
@@ -20,6 +24,9 @@ researchRouter.route('/:researchId').get(getResearchById);
 researchRouter.route('/').post(verifyJWT, createResearch);
 researchRouter.route('/:researchId').put(verifyJWT, updateResearch);
 researchRouter.route('/:researchId').delete(verifyJWT, deleteResearch);
+
+// Admin routes
+researchRouter.route('/admin/list').get(verifyJWT, listAdminResearch);
 researchRouter.route('/admin/stats').get(verifyJWT, getResearchStats);
 
 // Get research by course ID (auth required)

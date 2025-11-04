@@ -1,4 +1,5 @@
 export { CompetitionCard } from "./competition-card";
+export { CreateEditCompetitionDialog } from "./create-edit-competition-dialog";
 export { DeleteConfirmDialog } from "./delete-confirm-dialog";
 export {
     COMPETITION_TYPE_COLORS,
