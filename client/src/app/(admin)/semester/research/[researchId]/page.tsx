@@ -3,22 +3,39 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import useAuthStore from "@/store/store";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Calendar,
   CheckCircle,
+  CheckCircle2,
+  Circle,
   Clock,
   ExternalLink,
   FileText,
   GraduationCap,
+  Hash,
   Link as LinkIcon,
+  Loader2,
   Mail,
   PlayCircle,
+  Plus,
   Sparkles,
   User,
   Users,
@@ -37,9 +54,27 @@ interface Student {
   joinedAt: string;
 }
 
+interface Milestone {
+  milestoneId: string;
+  title: string;
+  description: string | null;
+  status: string;
+  startDate: string | null;
+  deadline: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  approverFirstName: string | null;
+  approverLastName: string | null;
+  blockchainHash: string | null;
+  blockchainTxId: string | null;
+  createdAt: string;
+}
+
 interface ResearchDetail {
   researchId: string;
   courseId: string;
+  courseCode: string | null;
+  semester: string | null;
   title: string;
   description: string | null;
   supervisorId: string;
@@ -53,6 +88,7 @@ interface ResearchDetail {
   createdAt: string;
   updatedAt: string | null;
   students: Student[];
+  milestones: Milestone[];
 }
 
 export default function ResearchDetailPage() {
@@ -63,15 +99,27 @@ export default function ResearchDetailPage() {
 
   const [research, setResearch] = useState<ResearchDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Add Milestone Form State
+  const [newMilestone, setNewMilestone] = useState({
+    title: "",
+    description: "",
+    startDate: "",
+    deadline: "",
+  });
 
   const fetchResearchDetails = async () => {
     try {
       setIsLoading(true);
 
       // Mock data for frontend prototype
-      const mockResearch = {
+      const mockResearch: ResearchDetail = {
         researchId: researchId,
         courseId: "course-1",
+        courseCode: "CSE450",
+        semester: "4/1",
         title: "Deep Learning Applications in Natural Language Processing",
         description: "This research explores advanced deep learning architectures for natural language understanding, focusing on transformer models and their applications in sentiment analysis, machine translation, and text summarization. The study includes implementation of novel attention mechanisms and comparative analysis with existing state-of-the-art models.",
         supervisorId: "sup-1",
@@ -108,6 +156,83 @@ export default function ResearchDetailPage() {
             email: "david.m@student.edu",
             role: "ML Engineer",
             joinedAt: "2024-08-20T09:15:00Z",
+          },
+        ],
+        milestones: [
+          {
+            milestoneId: "m-1",
+            title: "Research Problem Definition & Literature Review",
+            description: "Identify research gaps, define problem statement, and conduct comprehensive literature survey",
+            status: "approved",
+            startDate: "2024-08-15",
+            deadline: "2024-09-30",
+            blockchainHash: "0x1234...abcd",
+            blockchainTxId: "0xabc123...xyz789",
+            approvedAt: "2024-09-28T16:30:00Z",
+            approvedBy: "sup-1",
+            approverFirstName: "Dr. Emily",
+            approverLastName: "Chen",
+            createdAt: "2024-08-15T10:00:00Z",
+          },
+          {
+            milestoneId: "m-2",
+            title: "Dataset Collection & Preprocessing",
+            description: "Collect diverse NLP datasets, perform data cleaning, tokenization, and create splits",
+            status: "approved",
+            startDate: "2024-10-01",
+            deadline: "2024-10-31",
+            blockchainHash: "0x5678...efgh",
+            blockchainTxId: "0xdef456...uvw012",
+            approvedAt: "2024-10-30T10:15:00Z",
+            approvedBy: "sup-1",
+            approverFirstName: "Dr. Emily",
+            approverLastName: "Chen",
+            createdAt: "2024-10-01T08:00:00Z",
+          },
+          {
+            milestoneId: "m-3",
+            title: "Model Architecture Design & Implementation",
+            description: "Design novel attention mechanisms, implement baseline and proposed models",
+            status: "ready_for_review",
+            startDate: "2024-11-01",
+            deadline: "2024-12-31",
+            blockchainHash: "0x9abc...ijkl",
+            blockchainTxId: null,
+            approvedAt: null,
+            approvedBy: null,
+            approverFirstName: null,
+            approverLastName: null,
+            createdAt: "2024-11-01T09:00:00Z",
+          },
+          {
+            milestoneId: "m-4",
+            title: "Evaluation & Benchmarking",
+            description: "Evaluate models on multiple benchmarks and perform ablation studies",
+            status: "in_progress",
+            startDate: "2025-01-01",
+            deadline: "2025-02-28",
+            blockchainHash: null,
+            blockchainTxId: null,
+            approvedAt: null,
+            approvedBy: null,
+            approverFirstName: null,
+            approverLastName: null,
+            createdAt: "2024-11-01T09:00:00Z",
+          },
+          {
+            milestoneId: "m-5",
+            title: "Paper Writing & Publication",
+            description: "Write research paper, submit to conference/journal, and address reviewer comments",
+            status: "not_started",
+            startDate: "2025-03-01",
+            deadline: "2025-06-30",
+            blockchainHash: null,
+            blockchainTxId: null,
+            approvedAt: null,
+            approvedBy: null,
+            approverFirstName: null,
+            approverLastName: null,
+            createdAt: "2024-11-01T09:00:00Z",
           },
         ],
       };
@@ -158,6 +283,26 @@ export default function ResearchDetailPage() {
     );
   };
 
+  const getMilestoneStatusBadge = (status: string) => {
+    const statusConfig = {
+      not_started: { icon: Circle, color: "bg-gray-100 text-gray-700", label: "Not Started" },
+      in_progress: { icon: PlayCircle, color: "bg-blue-100 text-blue-700", label: "In Progress" },
+      ready_for_review: { icon: Loader2, color: "bg-purple-100 text-purple-700", label: "Ready for Review" },
+      approved: { icon: CheckCircle2, color: "bg-green-100 text-green-700", label: "Approved" },
+      rejected: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Rejected" },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.not_started;
+    const Icon = config.icon;
+
+    return (
+      <Badge className={`${config.color} flex items-center gap-1 text-xs`} variant="outline">
+        <Icon className="w-3 h-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
   const formatDate = (date: string | null) => {
     if (!date) return "Not set";
     return new Date(date).toLocaleDateString("en-US", {
@@ -165,6 +310,85 @@ export default function ResearchDetailPage() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleAddMilestone = async () => {
+    if (!newMilestone.title.trim()) {
+      toast.error("Please enter a milestone title");
+      return;
+    }
+
+    if (!newMilestone.startDate || !newMilestone.deadline) {
+      toast.error("Please select both start date and deadline");
+      return;
+    }
+
+    if (new Date(newMilestone.deadline) < new Date(newMilestone.startDate)) {
+      toast.error("Deadline cannot be before start date");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Mock API call - Replace with actual API when backend is ready
+      const mockNewMilestone: Milestone = {
+        milestoneId: `m-${Date.now()}`,
+        title: newMilestone.title,
+        description: newMilestone.description || null,
+        status: "not_started",
+        startDate: newMilestone.startDate,
+        deadline: newMilestone.deadline,
+        blockchainHash: null,
+        blockchainTxId: null,
+        approvedAt: null,
+        approvedBy: null,
+        approverFirstName: null,
+        approverLastName: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Update local state
+      if (research) {
+        setResearch({
+          ...research,
+          milestones: [...research.milestones, mockNewMilestone],
+        });
+      }
+
+      // Uncomment when backend is ready:
+      // const response = await Axios.post(
+      //   `/api/milestone`,
+      //   {
+      //     researchId,
+      //     title: newMilestone.title,
+      //     description: newMilestone.description,
+      //     startDate: newMilestone.startDate,
+      //     deadline: newMilestone.deadline,
+      //   },
+      //   {
+      //     headers: { Authorization: `Bearer ${accessToken}` },
+      //   }
+      // );
+      // if (response.data.success) {
+      //   setResearch({
+      //     ...research,
+      //     milestones: [...research.milestones, response.data.data],
+      //   });
+      // }
+
+      toast.success("Milestone added successfully!");
+      setIsAddMilestoneOpen(false);
+      setNewMilestone({ title: "", description: "", startDate: "", deadline: "" });
+    } catch (error: any) {
+      console.error("Error adding milestone:", error);
+      toast.error("Failed to add milestone");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -190,6 +414,19 @@ export default function ResearchDetailPage() {
     );
   }
 
+  const canManageResearch =
+    user?.role === "faculty" || user?.role === "department_admin" || user?.userId === research.supervisorId;
+
+  const handleBackNavigation = () => {
+    // Navigate back to the course page with research tab
+    if (research?.semester && research?.courseCode) {
+      const semesterCode = research.semester.replace('/', '-');
+      router.push(`/semester/${semesterCode}/${research.courseCode}?tab=research`);
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -201,7 +438,7 @@ export default function ResearchDetailPage() {
         >
           <Button
             variant="ghost"
-            onClick={() => router.back()}
+            onClick={handleBackNavigation}
             className="mb-6 hover:bg-orange-100 dark:hover:bg-orange-900/30"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -269,9 +506,7 @@ export default function ResearchDetailPage() {
                     </p>
                   </motion.div>
                 ) : (
-                  <p className="text-gray-500 dark:text-gray-400 italic">
-                    No description provided
-                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 italic">No description provided</p>
                 )}
               </CardContent>
             </Card>
@@ -285,7 +520,7 @@ export default function ResearchDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 gap-6">
                   <motion.div
                     className="flex flex-col p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg"
                     initial={{ opacity: 0, y: 20 }}
@@ -315,68 +550,126 @@ export default function ResearchDetailPage() {
                       {formatDate(research.endDate)}
                     </span>
                   </motion.div>
-
-                  {research.updatedAt && (
-                    <motion.div
-                      className="flex flex-col p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 }}
-                    >
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Last Updated
-                      </span>
-                      <span className="text-xl font-bold text-green-700 dark:text-green-400">
-                        {formatDate(research.updatedAt)}
-                      </span>
-                    </motion.div>
-                  )}
                 </div>
+                {research.publicationUrl && (
+                  <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
+                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
+                      <LinkIcon className="w-4 h-4" />
+                      Publication URL
+                    </span>
+                    <a
+                      href={research.publicationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 mt-2"
+                    >
+                      {research.publicationUrl}
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Publication */}
-            {research.publicationUrl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Card className="border-2 border-purple-200 dark:border-purple-800 shadow-lg overflow-hidden">
-                  <CardHeader className="bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/30 dark:to-fuchsia-900/30">
-                    <CardTitle className="text-purple-900 dark:text-purple-100 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5" />
-                      Publication
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-2">
-                            <LinkIcon className="w-4 h-4" />
-                            Publication Link
-                          </span>
-                          <a
-                            href={research.publicationUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 font-medium"
+            {/* Milestones */}
+            <Card className="border-2 border-green-200 dark:border-green-800 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-green-900 dark:text-green-100 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Milestones ({research.milestones.length})
+                  </CardTitle>
+                  {canManageResearch && (
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setIsAddMilestoneOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Milestone
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ScrollArea className="h-[500px] pr-4">
+                  <AnimatePresence>
+                    {research.milestones.length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-center py-12 text-gray-500 dark:text-gray-400"
+                      >
+                        <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>No milestones yet</p>
+                      </motion.div>
+                    ) : (
+                      <div className="space-y-4">
+                        {research.milestones.map((milestone, index) => (
+                          <motion.div
+                            key={milestone.milestoneId}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ delay: index * 0.1 }}
+                            onClick={() =>
+                              router.push(
+                                `/semester/research/${researchId}/milestone/${milestone.milestoneId}`
+                              )
+                            }
+                            className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-300 dark:hover:border-green-700 transition-all hover:shadow-md cursor-pointer group"
                           >
-                            View Publication
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        </div>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors flex items-center gap-2">
+                                  {milestone.title}
+                                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </h4>
+                                {getMilestoneStatusBadge(milestone.status)}
+                              </div>
+                            </div>
+                            {milestone.description && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                {milestone.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                              {milestone.startDate && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  Start: {formatDate(milestone.startDate)}
+                                </span>
+                              )}
+                              {milestone.deadline && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  Deadline: {formatDate(milestone.deadline)}
+                                </span>
+                              )}
+                            </div>
+                            {milestone.blockchainHash && (
+                              <div className="mt-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded text-xs">
+                                <span className="font-semibold flex items-center gap-1">
+                                  <Hash className="w-3 h-3" />
+                                  Blockchain Hash:
+                                </span>
+                                <code className="text-indigo-700 dark:text-indigo-400">
+                                  {milestone.blockchainHash}
+                                </code>
+                              </div>
+                            )}
+                            {milestone.approvedAt && milestone.approverFirstName && (
+                              <div className="mt-2 text-xs text-green-700 dark:text-green-400 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Approved by {milestone.approverFirstName} {milestone.approverLastName} on{" "}
+                                {formatDate(milestone.approvedAt)}
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+                    )}
+                  </AnimatePresence>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </motion.div>
 
           {/* Sidebar */}
@@ -455,7 +748,10 @@ export default function ResearchDetailPage() {
                               {student.email}
                             </p>
                             {student.role && (
-                              <Badge variant="outline" className="mt-2 text-xs bg-white dark:bg-gray-800">
+                              <Badge
+                                variant="outline"
+                                className="mt-2 text-xs bg-white dark:bg-gray-800"
+                              >
                                 {student.role}
                               </Badge>
                             )}
@@ -471,50 +767,168 @@ export default function ResearchDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Card className="border-2 border-indigo-200 dark:border-indigo-800 shadow-lg overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30">
-                  <CardTitle className="text-indigo-900 dark:text-indigo-100 flex items-center gap-2 text-base">
-                    <FileText className="w-5 h-5" />
-                    Quick Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Team Size
-                      </span>
-                      <Badge className="bg-blue-600 text-white text-base px-3 py-1">
-                        {research.students.length}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Status
-                      </span>
-                      {getStatusBadge(research.status)}
-                    </div>
-                    {research.publicationUrl && (
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Publication
-                        </span>
-                        <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            {/* Progress Stats */}
+            <Card className="border-2 border-indigo-200 dark:border-indigo-800 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30">
+                <CardTitle className="text-indigo-900 dark:text-indigo-100 flex items-center gap-2 text-base">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Progress Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {["not_started", "in_progress", "ready_for_review", "approved", "rejected"].map(
+                    (status) => {
+                      const count = research.milestones.filter((m) => m.status === status).length;
+                      const percentage =
+                        research.milestones.length > 0
+                          ? (count / research.milestones.length) * 100
+                          : 0;
+
+                      return (
+                        <div key={status}>
+                          <div className="flex items-center justify-between mb-2">
+                            {getMilestoneStatusBadge(status)}
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                              {count}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <motion.div
+                              className={`h-full ${
+                                status === "approved"
+                                  ? "bg-green-500"
+                                  : status === "rejected"
+                                  ? "bg-red-500"
+                                  : status === "ready_for_review"
+                                  ? "bg-purple-500"
+                                  : status === "in_progress"
+                                  ? "bg-blue-500"
+                                  : "bg-gray-400"
+                              }`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{ duration: 1, delay: 0.5 }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </div>
+
+      {/* Add Milestone Dialog */}
+      <Dialog open={isAddMilestoneOpen} onOpenChange={setIsAddMilestoneOpen}>
+        <DialogContent className="sm:max-w-[600px] dark:bg-slate-950 bg-slate-100">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Add New Milestone
+            </DialogTitle>
+            <DialogDescription>
+              Create a new milestone for this research project. All fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">
+                Milestone Title <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="title"
+                placeholder="e.g., Model Architecture Design & Implementation"
+                value={newMilestone.title}
+                onChange={(e) =>
+                  setNewMilestone({ ...newMilestone, title: e.target.value })
+                }
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe the goals and deliverables of this milestone..."
+                value={newMilestone.description}
+                onChange={(e) =>
+                  setNewMilestone({ ...newMilestone, description: e.target.value })
+                }
+                rows={4}
+                className="w-full resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">
+                  Start Date <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={newMilestone.startDate}
+                  onChange={(e) =>
+                    setNewMilestone({ ...newMilestone, startDate: e.target.value })
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deadline">
+                  Deadline <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={newMilestone.deadline}
+                  onChange={(e) =>
+                    setNewMilestone({ ...newMilestone, deadline: e.target.value })
+                  }
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddMilestoneOpen(false);
+                setNewMilestone({ title: "", description: "", startDate: "", deadline: "" });
+              }}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddMilestone}
+              disabled={isSubmitting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Milestone
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
