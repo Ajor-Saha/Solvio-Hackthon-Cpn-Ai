@@ -4,20 +4,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Axios } from "@/config/axios";
 import useAuthStore from "@/store/store";
 import {
   Activity,
+  Award,
   BookOpen,
   Brain,
   Calendar,
-  Clock,
+  Flame,
   Gamepad2,
+  Lightbulb,
+  Rocket,
   Target,
-  TrendingUp,
-  Trophy
+  TrendingUp
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -422,195 +425,154 @@ export default function DashboardClient() {
             </div>
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">Total Quizzes</p>
-                    <p className="text-2xl font-bold">{dashboardData.stats.totalQuizzes}</p>
-                  </div>
-                  <BookOpen className="w-8 h-8 text-blue-200" />
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100 text-sm">Avg Quiz Score</p>
-                    <p className="text-2xl font-bold">{dashboardData.stats.avgQuizScore}%</p>
-                  </div>
-                  <Target className="w-8 h-8 text-green-200" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm">Games Played</p>
-                    <p className="text-2xl font-bold">{dashboardData.stats.totalGamesPlayed}</p>
-                  </div>
-                  <Gamepad2 className="w-8 h-8 text-purple-200" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100 text-sm">Personal Trait</p>
-                    <p className="text-2xl font-bold">{dashboardData.stats.avgCognitiveScore}</p>
-                  </div>
-                  <Brain className="w-8 h-8 text-orange-200" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-pink-100 text-sm">Courses</p>
-                    <p className="text-2xl font-bold">{dashboardData.stats.coursesEnrolled}</p>
-                  </div>
-                  <BookOpen className="w-8 h-8 text-pink-200" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Main Dashboard Content */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="traits">Personal Traits</TabsTrigger>
-              <TabsTrigger value="games">Games</TabsTrigger>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-            </TabsList>
+
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Quiz Results */}
+
+
+
+              </div>
+
+
+
+              {/* Additional Enhancement Sections */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Study Streak */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-yellow-600" />
-                      Recent Quiz Results
+                      <Flame className="w-5 h-5 text-orange-500" />
+                      Study Streak
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {dashboardData.recentQuizzes.length > 0 ? (
-                      dashboardData.recentQuizzes.map((quiz) => (
-                        <div key={quiz.resultId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                              {quiz.subject.name}
-                            </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {quiz.topic.title}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Clock className="w-3 h-3 text-gray-400" />
-                              <span className="text-xs text-gray-500">
-                                {Math.floor(quiz.timeTaken / 60)}m {quiz.timeTaken % 60}s
-                              </span>
-                            </div>
+                  <CardContent>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-orange-600">7</div>
+                      <div className="text-sm text-gray-500">Days in a row</div>
+                      <div className="flex justify-center gap-1 mt-3">
+                        {[1,2,3,4,5,6,7].map(day => (
+                          <div key={day} className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {day}
                           </div>
-                          <div className="text-right">
-                            <div className={`text-2xl font-bold ${getScoreColor(quiz.score)}`}>
-                              {quiz.score}%
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {Math.round((quiz.score / 100) * quiz.totalMarks)}/{quiz.totalMarks}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          No Quiz Results Yet
-                        </h3>
-                        <p className="text-gray-500 dark:text-gray-400">
-                          Start taking quizzes to see your recent results here.
-                        </p>
+                        ))}
                       </div>
-                    )}
+                      <div className="text-xs text-gray-400 mt-2">Keep it up! 🔥</div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Quiz Score Trend */}
+                {/* Quick Actions */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                      Quiz Score Trend
+                      <Rocket className="w-5 h-5 text-blue-500" />
+                      Quick Actions
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={quizTrendData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="score" stroke="#10b981" name="Score %" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  <CardContent className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start gap-2" size="sm">
+                      <BookOpen className="w-4 h-4" /> Start Quiz
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start gap-2" size="sm">
+                      <Brain className="w-4 h-4" /> Play Cognitive Game
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start gap-2" size="sm">
+                      <Target className="w-4 h-4" /> Set Study Goal
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Achievements */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-yellow-500" />
+                      Recent Achievements
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white">
+                        🏆
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Quiz Master</div>
+                        <div className="text-xs text-gray-500">10 quizzes completed</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white">
+                        ⚡
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Speed Learner</div>
+                        <div className="text-xs text-gray-500">Fast completion streak</div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
+              {/* Study Plan & Recommendations */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Weighted vs Correct */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-blue-600" />
-                      Correct Answers by Quiz
+                      <Calendar className="w-5 h-5 text-indigo-500" />
+                      Today's Study Plan
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={quizTrendData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="correct" fill="#6366f1" name="Correct" />
-                        <Bar dataKey="total" fill="#94a3b8" name="Total" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                        <span className="text-sm">Complete Machine Learning Quiz</span>
+                      </div>
+                      <Badge variant="secondary">09:00 AM</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm">Review Data Structures</span>
+                      </div>
+                      <Badge variant="secondary">02:00 PM</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm">Cognitive Training Game</span>
+                      </div>
+                      <Badge variant="secondary">06:00 PM</Badge>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Course Progress Overview */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="w-5 h-5 text-blue-600" />
-                      Course Progress Overview
+                      <Lightbulb className="w-5 h-5 text-purple-500" />
+                      AI Recommendations
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={courseProgressData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" hide />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip />
-                        <Bar dataKey="progress" fill="#22c55e" name="Progress %" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <CardContent className="space-y-3">
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Focus Area: Algorithms</div>
+                      <div className="text-xs text-gray-600">You scored 65% on recent algorithm quizzes. Try more practice problems.</div>
+                    </div>
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Study Time Optimization</div>
+                      <div className="text-xs text-gray-600">Your peak learning time is 9-11 AM. Schedule difficult topics then.</div>
+                    </div>
+                    <div className="p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Memory Retention</div>
+                      <div className="text-xs text-gray-600">Try spaced repetition for better long-term retention.</div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -665,6 +627,108 @@ export default function DashboardClient() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Enhanced Personal Traits Sections */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Cognitive Health Score */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-teal-600" />
+                      Cognitive Health
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-teal-600 mb-2">85%</div>
+                      <Progress value={85} className="mb-3" />
+                      <div className="text-sm text-gray-600">Overall Brain Fitness</div>
+                      <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
+                        <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded">
+                          <div className="font-medium">Memory</div>
+                          <div className="text-teal-600">92%</div>
+                        </div>
+                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                          <div className="font-medium">Focus</div>
+                          <div className="text-blue-600">78%</div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Learning Style */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-purple-600" />
+                      Learning Style
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Visual</span>
+                        <div className="flex items-center gap-2">
+                          <Progress value={85} className="w-16" />
+                          <span className="text-sm font-medium">85%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Auditory</span>
+                        <div className="flex items-center gap-2">
+                          <Progress value={60} className="w-16" />
+                          <span className="text-sm font-medium">60%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Kinesthetic</span>
+                        <div className="flex items-center gap-2">
+                          <Progress value={72} className="w-16" />
+                          <span className="text-sm font-medium">72%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs">
+                      <strong>Recommendation:</strong> Use visual aids and diagrams for better learning
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Mood & Energy */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-green-600" />
+                      Mood & Energy
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">😊</div>
+                        <div className="text-lg font-semibold text-green-600">Good</div>
+                        <div className="text-xs text-gray-500">Current mood level</div>
+                      </div>
+                      <Separator />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Energy Level</span>
+                          <span className="font-medium text-green-600">High</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Stress Level</span>
+                          <span className="font-medium text-yellow-600">Moderate</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Focus Time</span>
+                          <span className="font-medium text-blue-600">45 min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="games" className="space-y-6">
@@ -701,6 +765,94 @@ export default function DashboardClient() {
                         <Bar dataKey="score" fill="#a78bfa" name="Score" />
                       </BarChart>
                     </ResponsiveContainer>
+                  </div>
+
+                  {/* Game Achievements & Challenges */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Award className="w-5 h-5 text-yellow-600" />
+                          Game Achievements
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">🎯</div>
+                            <div>
+                              <div className="font-medium text-sm">Perfect Score</div>
+                              <div className="text-xs text-gray-500">Achieved maximum score in Color Match</div>
+                            </div>
+                          </div>
+                          <Badge variant="secondary">New!</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">⚡</div>
+                            <div>
+                              <div className="font-medium text-sm">Speed Runner</div>
+                              <div className="text-xs text-gray-500">Completed maze in under 30 seconds</div>
+                            </div>
+                          </div>
+                          <Badge variant="outline">Earned</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">🧠</div>
+                            <div>
+                              <div className="font-medium text-sm">Brain Master</div>
+                              <div className="text-xs text-gray-500">Improved cognitive score by 20%</div>
+                            </div>
+                          </div>
+                          <Badge variant="outline">Earned</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Target className="w-5 h-5 text-blue-600" />
+                          Daily Challenges
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <div>
+                            <div className="font-medium text-sm">Memory Challenge</div>
+                            <div className="text-xs text-gray-500">Remember 8+ sequences</div>
+                            <Progress value={75} className="w-20 h-2 mt-2" />
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600">6/8</div>
+                            <div className="text-xs text-gray-500">Progress</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <div>
+                            <div className="font-medium text-sm">Reaction Time</div>
+                            <div className="text-xs text-gray-500">React in under 300ms</div>
+                            <Progress value={100} className="w-20 h-2 mt-2" />
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-green-600">✓</div>
+                            <div className="text-xs text-gray-500">Complete</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <div>
+                            <div className="font-medium text-sm">Focus Training</div>
+                            <div className="text-xs text-gray-500">30 minutes of focus</div>
+                            <Progress value={0} className="w-20 h-2 mt-2" />
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-gray-400">0/30</div>
+                            <div className="text-xs text-gray-500">Pending</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </CardContent>
               </Card>
@@ -753,6 +905,111 @@ export default function DashboardClient() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Enhanced Courses Sections */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Course Analytics */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      Learning Analytics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-emerald-600">4.2h</div>
+                        <div className="text-xs text-gray-600">Weekly Study Time</div>
+                      </div>
+                      <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">87%</div>
+                        <div className="text-xs text-gray-600">Completion Rate</div>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Most Active Day</span>
+                        <Badge variant="outline">Tuesday</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Preferred Study Time</span>
+                        <Badge variant="outline">Morning</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Learning Streak</span>
+                        <Badge variant="outline">12 days</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Upcoming Deadlines */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-red-600" />
+                      Upcoming Deadlines
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <div>
+                        <div className="font-medium text-sm">Machine Learning Assignment</div>
+                        <div className="text-xs text-gray-500">Neural Networks Project</div>
+                      </div>
+                      <Badge variant="destructive">2 days</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <div>
+                        <div className="font-medium text-sm">Database Systems Quiz</div>
+                        <div className="text-xs text-gray-500">SQL Optimization</div>
+                      </div>
+                      <Badge variant="secondary">5 days</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div>
+                        <div className="font-medium text-sm">Algorithms Mid-term</div>
+                        <div className="text-xs text-gray-500">Dynamic Programming</div>
+                      </div>
+                      <Badge variant="outline">1 week</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Study Recommendations */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5 text-amber-600" />
+                    Smart Study Recommendations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg">
+                      <div className="text-2xl mb-2">🎯</div>
+                      <div className="font-semibold text-sm mb-1">Focus Session</div>
+                      <div className="text-xs text-gray-600 mb-3">Review Machine Learning concepts you scored low on</div>
+                      <Button size="sm" variant="outline" className="w-full">Start Now</Button>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
+                      <div className="text-2xl mb-2">📚</div>
+                      <div className="font-semibold text-sm mb-1">Practice Problems</div>
+                      <div className="text-xs text-gray-600 mb-3">Solve 5 algorithm problems to improve understanding</div>
+                      <Button size="sm" variant="outline" className="w-full">Practice</Button>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg">
+                      <div className="text-2xl mb-2">🤝</div>
+                      <div className="font-semibold text-sm mb-1">Study Group</div>
+                      <div className="text-xs text-gray-600 mb-3">Join a study session for Database Systems</div>
+                      <Button size="sm" variant="outline" className="w-full">Join Group</Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
