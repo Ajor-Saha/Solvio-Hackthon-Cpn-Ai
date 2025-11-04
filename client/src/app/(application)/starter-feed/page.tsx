@@ -102,7 +102,7 @@ interface HigherStudy {
 type AnnouncementType = 'all' | 'jobs' | 'competitions' | 'achievements' | 'research' | 'higher-studies';
 type StatusFilter = 'all' | 'active' | 'ongoing' | 'completed';
 
-export default function StarterFeedPage() {
+export default function InsightFeedPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -343,8 +343,13 @@ export default function StarterFeedPage() {
       });
     }
 
-    // Sort by creation date (newest first)
-    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // SHUFFLE posts like social media (mix all types together)
+    const shuffled = [...filtered];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   };
 
   const getTypeIcon = (type: AnnouncementType) => {
@@ -369,219 +374,279 @@ export default function StarterFeedPage() {
     }
   };
 
+  // Generate mock frontend-only data for visual appeal
+  const getMockData = (type: AnnouncementType) => {
+    const views = Math.floor(Math.random() * 500) + 50;
+    const applicants = Math.floor(Math.random() * 100) + 10;
+    const salary = type === "jobs" ? `$${Math.floor(Math.random() * 50 + 50)}k - $${Math.floor(Math.random() * 100 + 100)}k` : null;
+    const prize = type === "competitions" ? `$${Math.floor(Math.random() * 5000 + 1000)}` : null;
+    const participants = type === "competitions" ? Math.floor(Math.random() * 200) + 20 : null;
+
+    return { views, applicants, salary, prize, participants };
+  };
+
   const renderAnnouncementCard = (item: ReturnType<typeof getAllAnnouncements>[0]) => {
     const { type, data } = item;
+    const mockData = getMockData(type);
+
+    const handleCardClick = () => {
+      router.push(`/starter-feed/${type}/${item.id}`);
+    };
 
     return (
-      <article key={item.id} className="py-6 border-b border-border last:border-b-0">
-        <div className="flex items-start gap-4">
-          <div className={`mt-1 w-8 h-8 rounded-full ${getTypeColor(type)} flex items-center justify-center text-white`}>
-            {getTypeIcon(type)}
+      <article
+        key={item.id}
+        onClick={handleCardClick}
+        className="group relative bg-card border border-border rounded-2xl p-6 hover:shadow-2xl hover:border-primary/50 transition-all duration-300 cursor-pointer overflow-hidden"
+      >
+        {/* Gradient overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+        <div className="relative flex items-start gap-4">
+          {/* Icon with animated gradient background */}
+          <div className={`shrink-0 w-14 h-14 rounded-xl ${getTypeColor(type)} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+            <div className="scale-125">
+              {getTypeIcon(type)}
+            </div>
           </div>
-          <div className="flex-1 space-y-3">
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-semibold leading-snug">{item.title}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
+
+          <div className="flex-1 space-y-4 min-w-0">
+            {/* Header with badges */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                  {item.title}
+                </h2>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs font-semibold">
                     {type.replace("-", " ").toUpperCase()}
                   </Badge>
                   <Badge variant={item.status === "active" ? "default" : "secondary"} className="text-xs">
                     {item.status.toUpperCase()}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(item.createdAt).toLocaleDateString()}
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            <div className="prose prose-sm max-w-none">
-              <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                {item.description}
-              </p>
-            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
+              {item.description}
+            </p>
 
-            {/* Type-specific details */}
-            <div className="space-y-2">
+            {/* Type-specific details with enhanced styling */}
+            <div className="space-y-3">
               {type === "jobs" && (
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {(data as Job).companyName && (
-                    <span className="flex items-center gap-1">
-                      <Building className="w-3 h-3" />
-                      {(data as Job).companyName}
-                    </span>
-                  )}
-                  {(data as Job).location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {(data as Job).location}
-                    </span>
-                  )}
-                  {(data as Job).jobType && (
-                    <Badge variant="outline" className="text-xs">
-                      {(data as Job).jobType?.replace("_", " ")}
-                    </Badge>
+                <>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    {(data as Job).companyName && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <Building className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{(data as Job).companyName}</span>
+                      </span>
+                    )}
+                    {(data as Job).location && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{(data as Job).location}</span>
+                      </span>
+                    )}
+                    {(data as Job).jobType && (
+                      <Badge variant="secondary" className="px-3 py-1.5">
+                        {(data as Job).jobType?.replace("_", " ")}
+                      </Badge>
+                    )}
+                  </div>
+                  {mockData.salary && (
+                    <div className="flex items-center gap-2 text-lg font-bold text-green-600 dark:text-green-400">
+                      💰 {mockData.salary}/year
+                    </div>
                   )}
                   {(data as Job).applicationDeadline && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Apply by: {new Date((data as Job).applicationDeadline!).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-semibold">Deadline: {new Date((data as Job).applicationDeadline!).toLocaleDateString()}</span>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
               {type === "competitions" && (
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {(data as Competition).organizerName && (
-                    <span className="flex items-center gap-1">
-                      <Building className="w-3 h-3" />
-                      {(data as Competition).organizerName}
-                    </span>
+                <>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    {(data as Competition).organizerName && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <Building className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{(data as Competition).organizerName}</span>
+                      </span>
+                    )}
+                    {(data as Competition).location && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{(data as Competition).location}</span>
+                      </span>
+                    )}
+                    {(data as Competition).type && (
+                      <Badge variant="secondary" className="px-3 py-1.5">
+                        {(data as Competition).type?.replace("_", " ")}
+                      </Badge>
+                    )}
+                  </div>
+                  {mockData.prize && (
+                    <div className="flex items-center gap-2 text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                      🏆 Prize Pool: {mockData.prize}
+                    </div>
                   )}
-                  {(data as Competition).location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {(data as Competition).location}
-                    </span>
-                  )}
-                  {(data as Competition).type && (
-                    <Badge variant="outline" className="text-xs">
-                      {(data as Competition).type?.replace("_", " ")}
-                    </Badge>
+                  {mockData.participants && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                      👥 <span className="font-semibold">{mockData.participants} participants</span>
+                    </div>
                   )}
                   {(data as Competition).eventDate && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Event: {new Date((data as Competition).eventDate!).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-semibold">Event: {new Date((data as Competition).eventDate!).toLocaleDateString()}</span>
+                    </div>
                   )}
-                  {(data as Competition).registrationDeadline && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Register by: {new Date((data as Competition).registrationDeadline!).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
+                </>
               )}
 
               {type === "achievements" && (
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {(data as Achievement).awardedTo && (
-                    <span className="flex items-center gap-1">
-                      <Award className="w-3 h-3" />
-                      Awarded to: {(data as Achievement).awardedTo}
-                    </span>
-                  )}
-                  {(data as Achievement).awardingOrganization && (
-                    <span className="flex items-center gap-1">
-                      <Building className="w-3 h-3" />
-                      {(data as Achievement).awardingOrganization}
-                    </span>
-                  )}
-                  {(data as Achievement).achievementType && (
-                    <Badge variant="outline" className="text-xs">
-                      {(data as Achievement).achievementType?.replace("_", " ")}
-                    </Badge>
-                  )}
+                <>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    {(data as Achievement).awardedTo && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg font-semibold">
+                        <Award className="w-4 h-4" />
+                        {(data as Achievement).awardedTo}
+                      </span>
+                    )}
+                    {(data as Achievement).awardingOrganization && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <Building className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{(data as Achievement).awardingOrganization}</span>
+                      </span>
+                    )}
+                    {(data as Achievement).achievementType && (
+                      <Badge variant="secondary" className="px-3 py-1.5">
+                        {(data as Achievement).achievementType?.replace("_", " ")}
+                      </Badge>
+                    )}
+                  </div>
                   {(data as Achievement).achievementDate && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {new Date((data as Achievement).achievementDate!).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-semibold">Awarded: {new Date((data as Achievement).achievementDate!).toLocaleDateString()}</span>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
               {type === "research" && (
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {(data as Research).startDate && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Started: {new Date((data as Research).startDate!).toLocaleDateString()}
-                    </span>
-                  )}
-                  {(data as Research).endDate && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      End: {new Date((data as Research).endDate!).toLocaleDateString()}
-                    </span>
-                  )}
+                <>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    {(data as Research).startDate && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Started: {new Date((data as Research).startDate!).toLocaleDateString()}</span>
+                      </span>
+                    )}
+                    {(data as Research).endDate && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <span className="font-medium">End: {new Date((data as Research).endDate!).toLocaleDateString()}</span>
+                      </span>
+                    )}
+                  </div>
                   {(data as Research).publicationUrl && (
-                    <a
-                      href={(data as Research).publicationUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 hover:text-blue-600"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      Publication
-                    </a>
+                    <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                      <ExternalLink className="w-4 h-4" />
+                      <span className="font-semibold">Published Research Available</span>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
               {type === "higher-studies" && (
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Building className="w-3 h-3" />
-                    {(data as HigherStudy).institution}
-                  </span>
-                  {(data as HigherStudy).location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {(data as HigherStudy).location}
+                <>
+                  <div className="flex flex-wrap gap-3 text-sm">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                      <Building className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{(data as HigherStudy).institution}</span>
                     </span>
-                  )}
-                  {(data as HigherStudy).studyType && (
-                    <Badge variant="outline" className="text-xs">
-                      {(data as HigherStudy).studyType?.replace("_", " ")}
-                    </Badge>
-                  )}
-                  {(data as HigherStudy).fieldOfStudy && (
-                    <Badge variant="outline" className="text-xs">
-                      {(data as HigherStudy).fieldOfStudy}
-                    </Badge>
-                  )}
+                    {(data as HigherStudy).location && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-lg">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{(data as HigherStudy).location}</span>
+                      </span>
+                    )}
+                    {(data as HigherStudy).studyType && (
+                      <Badge variant="secondary" className="px-3 py-1.5">
+                        {(data as HigherStudy).studyType?.replace("_", " ")}
+                      </Badge>
+                    )}
+                    {(data as HigherStudy).fieldOfStudy && (
+                      <Badge variant="outline" className="px-3 py-1.5">
+                        {(data as HigherStudy).fieldOfStudy}
+                      </Badge>
+                    )}
+                  </div>
                   {(data as HigherStudy).applicationDeadline && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Apply by: {new Date((data as HigherStudy).applicationDeadline!).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-semibold">Deadline: {new Date((data as HigherStudy).applicationDeadline!).toLocaleDateString()}</span>
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-2 pt-2">
-              {(type === "jobs" && (data as Job).externalUrl) && (
-                <Button size="sm" variant="outline" asChild>
-                  <a href={(data as Job).externalUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Apply Now
-                  </a>
+            {/* Stats footer */}
+            <div className="flex items-center justify-between pt-4 border-t border-border/50">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  👁️ {mockData.views} views
+                </span>
+                <span className="flex items-center gap-1">
+                  💬 {Math.floor(mockData.views / 10)} comments
+                </span>
+                <span className="flex items-center gap-1">
+                  ❤️ {Math.floor(mockData.views / 20)} likes
+                </span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2">
+                {(type === "jobs" && (data as Job).externalUrl) && (
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700" asChild>
+                    <a href={(data as Job).externalUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Apply Now
+                    </a>
+                  </Button>
+                )}
+                {(type === "competitions" && (data as Competition).externalUrl) && (
+                  <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700" asChild>
+                    <a href={(data as Competition).externalUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Register
+                    </a>
+                  </Button>
+                )}
+                {(type === "higher-studies" && (data as HigherStudy).applicationUrl) && (
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700" asChild>
+                    <a href={(data as HigherStudy).applicationUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Apply
+                    </a>
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="text-xs">
+                  View Details
                 </Button>
-              )}
-              {(type === "competitions" && (data as Competition).externalUrl) && (
-                <Button size="sm" variant="outline" asChild>
-                  <a href={(data as Competition).externalUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Register
-                  </a>
-                </Button>
-              )}
-              {(type === "higher-studies" && (data as HigherStudy).applicationUrl) && (
-                <Button size="sm" variant="outline" asChild>
-                  <a href={(data as HigherStudy).applicationUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Apply
-                  </a>
-                </Button>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -600,7 +665,7 @@ export default function StarterFeedPage() {
             <Newspaper className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">StarterFeed</h1>
+            <h1 className="text-2xl font-bold">InsightFeed</h1>
             <p className="text-sm text-muted-foreground">Latest announcements, opportunities, and updates</p>
           </div>
         </div>
@@ -685,7 +750,7 @@ export default function StarterFeedPage() {
             {(searchTerm || typeFilter !== "all" || statusFilter !== "all") && (
               <span> matching your filters</span>
             )}
-          </div>
+        </div>
         )}
       </div>
     </div>
