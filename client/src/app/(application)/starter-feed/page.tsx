@@ -127,7 +127,7 @@ export default function StarterFeedPage() {
           const debugRes = await Axios.get(`${env.BACKEND_BASE_URL}/api/debug/database`);
           console.log("🔍 DEBUG - Database contents:", debugRes.data);
         } catch (error) {
-          console.log("❌ DEBUG endpoint not available:", error.message);
+          console.log("DEBUG endpoint not available:", error.message);
         }
 
         // Fetch jobs using public endpoint (students/faculty can access)

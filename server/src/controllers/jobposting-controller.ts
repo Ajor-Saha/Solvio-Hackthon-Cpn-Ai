@@ -6,12 +6,7 @@ import { jobPostingTable } from '../db/schema';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
 
-/**
- * POST /api/jobs
- * Create new job posting (admin/faculty only)
- * Body: { title, description, companyName?, location?, jobType, externalUrl, applicationDeadline?, status? }
- * Returns: { jobId: string, status: string, postedAt: timestamp | null }
- */
+
 export const createJob = asyncHandler(async (req: Request, res: Response) => {
   try {
     let {

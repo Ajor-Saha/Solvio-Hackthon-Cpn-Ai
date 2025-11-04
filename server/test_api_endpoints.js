@@ -16,48 +16,48 @@ async function testEndpoints() {
 
   for (const endpoint of endpoints) {
     try {
-      console.log(`🔍 Testing ${endpoint.name}: GET ${endpoint.url}`);
+      console.log(`Testing ${endpoint.name}: GET ${endpoint.url}`);
 
       const response = await axios.get(endpoint.url, { params: endpoint.params });
 
-      console.log(`✅ Status: ${response.status}`);
-      console.log(`📊 Response structure:`, typeof response.data);
+      console.log(`Status: ${response.status}`);
+      console.log(`Response structure:`, typeof response.data);
 
       if (response.data) {
-        console.log(`📋 Keys:`, Object.keys(response.data));
+        console.log(`Keys:`, Object.keys(response.data));
 
         if (response.data.success !== undefined) {
-          console.log(`🎯 Success: ${response.data.success}`);
+          console.log(`Success: ${response.data.success}`);
         }
 
         if (response.data.data) {
           const data = response.data.data;
           if (Array.isArray(data)) {
-            console.log(`📝 Records count: ${data.length}`);
+            console.log(`Records count: ${data.length}`);
             if (data.length > 0) {
-              console.log(`📄 Sample record keys:`, Object.keys(data[0]));
-              console.log(`📄 Sample title: "${data[0].title || 'No title'}"`);
+              console.log(`Sample record keys:`, Object.keys(data[0]));
+              console.log(`Sample title: "${data[0].title || 'No title'}"`);
             }
           } else {
-            console.log(`📝 Data type:`, typeof data);
-            console.log(`📝 Data keys:`, Object.keys(data));
+            console.log(`Data type:`, typeof data);
+            console.log(`Data keys:`, Object.keys(data));
           }
         }
 
         if (response.data.message) {
-          console.log(`💬 Message: ${response.data.message}`);
+          console.log(`Message: ${response.data.message}`);
         }
       }
 
       console.log('');
     } catch (error) {
-      console.log(`❌ Error:`, error.response ?
+      console.log(`Error:`, error.response ?
         `${error.response.status} - ${error.response.statusText}` :
         error.message
       );
 
       if (error.response && error.response.data) {
-        console.log(`💬 Error message:`, error.response.data.message || error.response.data);
+        console.log(`Error message:`, error.response.data.message || error.response.data);
       }
       console.log('');
     }
