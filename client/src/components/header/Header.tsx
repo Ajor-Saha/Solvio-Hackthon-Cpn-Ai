@@ -115,6 +115,9 @@ function Header() {
             <a href="#resources" className=" dark:text-gray-200 hover:text-white dark:hover:text-white">
               Resources
             </a>
+            <Link href="/qa" className="dark:text-gray-200 hover:text-white dark:hover:text-white">
+              Q&A
+            </Link>
 
           </nav>
           {/* Right Side: Avatar Dropdown (if logged in) or Login Button & Theme Toggle */}
@@ -231,6 +234,14 @@ function Header() {
             >
               Resources
             </a>
+
+            <Link
+              href="/qa"
+              className="block py-1.5 sm:py-2 dark:text-gray-200 dark:hover:text-white text-sm sm:text-base"
+              onClick={closeMenu}
+            >
+              Q&A
+            </Link>
 
             <a
               href="#pricing"
