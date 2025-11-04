@@ -98,7 +98,7 @@ function Header() {
              Dashboard
             </a> */}
             <Link href="/starter-feed" className="dark:text-gray-200 hover:text-white dark:hover:text-white">
-              StarterFeed
+              InsightFeed
             </Link>
             <Link href="/courses" className="dark:text-gray-200 hover:text-white dark:hover:text-white">
               Courses
@@ -194,7 +194,7 @@ function Header() {
               className="block py-1.5 sm:py-2 dark:text-gray-200 dark:hover:text-white text-sm sm:text-base"
               onClick={closeMenu}
             >
-              StarterFeed
+              InsightFeed
             </Link>
             <Link
               href="/courses"
