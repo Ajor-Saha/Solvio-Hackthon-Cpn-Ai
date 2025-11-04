@@ -4,6 +4,7 @@ import {
   deleteResearch,
   getResearchById,
   getResearchStats,
+  listAdminResearch,
   listResearches,
   updateResearch,
 } from '../controllers/research-controller';
@@ -20,9 +21,14 @@ researchRouter.route('/:researchId').get(getResearchById);
 researchRouter.route('/').post(verifyJWT, createResearch);
 researchRouter.route('/:researchId').put(verifyJWT, updateResearch);
 researchRouter.route('/:researchId').delete(verifyJWT, deleteResearch);
+
+// Admin routes
+
 researchRouter.route('/admin/stats').get(verifyJWT, getResearchStats);
 
 // Get research by course ID (auth required)
 researchRouter.route('/course/:courseId').get(verifyJWT, getCourseResearch);
+
+researchRouter.route('/admin/list').get(verifyJWT, listAdminResearch);
 
 export default researchRouter;

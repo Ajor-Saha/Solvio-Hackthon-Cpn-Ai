@@ -128,7 +128,7 @@ export function CreateEditJobDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-neutral-900 text-neutral-200">
         {/* Header with Toggle Button */}
         <div className="flex items-center justify-between">
           <div>

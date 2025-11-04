@@ -22,7 +22,7 @@ export const createJob = asyncHandler(async (req: Request, res: Response) => {
       jobType = 'full_time',
       externalUrl,
       applicationDeadline,
-      status = 'draft',
+      status = 'active',
     } = req.body;
 
     const user = req.user;
@@ -88,11 +88,7 @@ export const createJob = asyncHandler(async (req: Request, res: Response) => {
         );
     }
 
-    // applicationDeadline is expected else make it draft
-
-    if (!applicationDeadline) {
-      status = 'draft';
-    }
+    // Keep status as provided (default 'active') even without applicationDeadline
 
     const newJob = {
       jobId: uuid(),

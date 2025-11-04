@@ -51,17 +51,20 @@ export default function CompetitionsPage() {
 
         const [competitionsRes, statsRes] = await Promise.all([
           Axios.get(
-            `${env.BACKEND_BASE_URL}/api/competitions/admin/list?${queryParams.toString()}`
+            `${env.BACKEND_BASE_URL}/api/competitions?${queryParams.toString()}`
           ),
           Axios.get(
             `${env.BACKEND_BASE_URL}/api/competitions/admin/stats`
           ),
         ]);
 
-        if (competitionsRes.data.data?.competitions) {
-          setCompetitions(competitionsRes.data.data.competitions);
-          console.log("Competitions data:", competitionsRes.data.data.competitions);
-          toast.success("Competitions loaded successfully");
+        console.log("Competitions API Response:", competitionsRes.data);
+
+        if (competitionsRes.data.success && competitionsRes.data.data) {
+          // Handle both possible response structures
+          const competitions = competitionsRes.data.data.competitions || competitionsRes.data.data.data || competitionsRes.data.data;
+          setCompetitions(Array.isArray(competitions) ? competitions : []);
+          console.log("Competitions data:", competitions);
         }
 
         if (statsRes.data.data) {

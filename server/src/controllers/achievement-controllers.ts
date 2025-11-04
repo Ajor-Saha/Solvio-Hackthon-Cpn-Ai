@@ -22,7 +22,7 @@ export const createAchievement = asyncHandler(async (req: Request, res: Response
       certificateUrl,
       imageUrl,
       featured = false,
-      status = 'draft',
+      status = 'published',
     } = req.body;
 
     const user = req.user;
@@ -325,6 +325,77 @@ export const deleteAchievement = asyncHandler(async (req: Request, res: Response
     console.error('Error deleting achievement:', error);
     res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
   }
+});
+
+/**
+ * GET /api/achievements/admin/list
+ * List admin achievements (admin only)
+ */
+export const listAdminAchievements = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    q,
+    status = 'all',
+    page = '1',
+    limit = '20',
+  } = req.query;
+
+  const user = req.user;
+
+  if (!user?.role || user.role !== 'department_admin') {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
+  }
+
+  const pageNum = parseInt(page as string, 10) || 1;
+  const limitNum = Math.min(parseInt(limit as string, 10) || 20, 50);
+  const offset = (pageNum - 1) * limitNum;
+
+  const filtersCondition = [
+    eq(achievementTable.departmentId, user.departmentId!),
+    isNull(achievementTable.deletedAt)
+  ];
+
+  if (status !== 'all') {
+    filtersCondition.push(eq(achievementTable.status, status as string));
+  }
+
+  if (q) {
+    const searchCondition = or(
+      ilike(achievementTable.title, `%${q}%`),
+      ilike(achievementTable.description, `%${q}%`),
+      ilike(achievementTable.awardedTo, `%${q}%`)
+    );
+    filtersCondition.push(searchCondition);
+  }
+
+  const whereClause = and(...filtersCondition);
+
+  const [totalResult, achievements] = await Promise.all([
+    db.select({ count: count() }).from(achievementTable).where(whereClause),
+    db
+      .select()
+      .from(achievementTable)
+      .where(whereClause)
+      .orderBy(desc(achievementTable.createdAt))
+      .limit(limitNum)
+      .offset(offset),
+  ]);
+
+  const total = Number(totalResult[0]?.count) || 0;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        data: achievements,
+        total,
+        page: pageNum,
+        limit: limitNum,
+      },
+      'Admin achievements fetched successfully'
+    )
+  );
 });
 
 /**

@@ -17,7 +17,7 @@ export const createResearch = asyncHandler(async (req: Request, res: Response) =
       description,
       courseId,
       supervisorId,
-      status = 'proposed',
+      status = 'published',
       startDate,
       endDate,
       publicationUrl,
@@ -297,6 +297,75 @@ export const deleteResearch = asyncHandler(async (req: Request, res: Response) =
     console.error('Error deleting research:', error);
     res.status(500).json(new ApiResponse(500, null, 'Internal server error'));
   }
+});
+
+/**
+ * GET /api/research/admin/list
+ * List admin research (admin only)
+ */
+export const listAdminResearch = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    q,
+    status = 'all',
+    page = '1',
+    limit = '20',
+  } = req.query;
+
+  const user = req.user;
+
+  if (!user?.role || user.role !== 'department_admin') {
+    return res
+      .status(403)
+      .json(new ApiResponse(403, null, 'Unauthorized: Insufficient permissions'));
+  }
+
+  const pageNum = parseInt(page as string, 10) || 1;
+  const limitNum = Math.min(parseInt(limit as string, 10) || 20, 50);
+  const offset = (pageNum - 1) * limitNum;
+
+  const filtersCondition = [
+    isNull(researchTable.deletedAt)
+  ];
+
+  if (status !== 'all') {
+    filtersCondition.push(eq(researchTable.status, status as string));
+  }
+
+  if (q) {
+    const searchCondition = or(
+      ilike(researchTable.title, `%${q}%`),
+      ilike(researchTable.description, `%${q}%`)
+    );
+    filtersCondition.push(searchCondition);
+  }
+
+  const whereClause = and(...filtersCondition);
+
+  const [totalResult, research] = await Promise.all([
+    db.select({ count: count() }).from(researchTable).where(whereClause),
+    db
+      .select()
+      .from(researchTable)
+      .where(whereClause)
+      .orderBy(desc(researchTable.createdAt))
+      .limit(limitNum)
+      .offset(offset),
+  ]);
+
+  const total = Number(totalResult[0]?.count) || 0;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        data: research,
+        total,
+        page: pageNum,
+        limit: limitNum,
+      },
+      'Admin research fetched successfully'
+    )
+  );
 });
 
 /**

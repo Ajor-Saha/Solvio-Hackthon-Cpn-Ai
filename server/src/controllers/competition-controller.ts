@@ -22,7 +22,7 @@ export const createCompetition = asyncHandler(async (req: Request, res: Response
       registrationDeadline,
       externalUrl,
       bannerUrl,
-      status = 'draft',
+      status = 'active',
     } = req.body;
 
     const user = req.user;
