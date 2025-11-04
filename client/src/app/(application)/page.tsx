@@ -1,871 +1,645 @@
-"use client";
-// import { Logo } from '@/components/logo'
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { InfiniteSlider } from "@/components/ui/InfiniteSlider";
-import { ProgressiveBlur } from "@/components/ui/progressive-blur";
-import { Check, Cpu, Lock, Sparkles, Zap } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-export default function PageLandingSection() {
-  const members = [
-    {
-      name: "Liam Brown",
-      role: "Founder - CEO",
-      avatar: "https://alt.tailus.io/images/team/member-one.webp",
-      link: "#",
-    },
-    {
-      name: "Elijah Jones",
-      role: "Co-Founder - CTO",
-      avatar: "https://alt.tailus.io/images/team/member-two.webp",
-      link: "#",
-    },
-    {
-      name: "Isabella Garcia",
-      role: "Sales Manager",
-      avatar: "https://alt.tailus.io/images/team/member-three.webp",
-      link: "#",
-    },
-  ];
-  return (
-    <>
-      <main>
-        {/*Hero Section*/}
-        <section
-          id="hero"
-          className="overflow-hidden bg-white dark:bg-transparent"
-        >
-          <div className="relative mx-auto max-w-5xl px-6 py-28 lg:py-24">
-            <div className="relative z-10 mx-auto max-w-2xl text-center">
-              <h1 className="text-balance text-4xl font-semibold md:text-5xl lg:text-6xl">
-                Modern Software testing reimagined
-              </h1>
-              <p className="mx-auto my-8 max-w-2xl text-xl">
-                Officiis laudantium excepturi ducimus rerum dignissimos, and
-                tempora nam vitae, excepturi ducimus iste provident dolores.
-              </p>
+'use client';
 
-              <Button asChild size="lg">
-                <Link href="#">
-                  <span className="btn-label">Start Building</span>
+import { useState, useEffect } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight,
+  Brain,
+  Shield,
+  Zap,
+  Users,
+  TrendingUp,
+  BookOpen,
+  Target,
+  CheckCircle,
+  Star,
+  Play,
+  ChevronDown,
+  Github,
+  Linkedin,
+  Twitter,
+  Globe,
+  Sparkles,
+  Rocket,
+  Network,
+  Eye,
+  Award,
+  Coffee,
+  Menu,
+  X
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+
+// Custom hook for intersection observer
+const useInView = (threshold = 0.1) => {
+  const [isInView, setIsInView] = useState(false);
+  const [ref, setRef] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!ref) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      { threshold }
+    );
+
+    observer.observe(ref);
+    return () => observer.disconnect();
+  }, [ref, threshold]);
+
+  return [setRef, isInView] as const;
+};
+
+// Animation variants
+const fadeInUp = {
+  initial: { opacity: 0, y: 60 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6, ease: "easeOut" }
+};
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const scaleIn = {
+  initial: { scale: 0.8, opacity: 0 },
+  animate: { scale: 1, opacity: 1 },
+  transition: { duration: 0.5 }
+};
+
+export default function LandingPage() {
+  const { scrollYProgress } = useScroll();
+  const [heroRef, heroInView] = useInView(0.1);
+  const [featuresRef, featuresInView] = useInView(0.1);
+  const [statsRef, statsInView] = useInView(0.1);
+  const [testimonialsRef, testimonialsInView] = useInView(0.1);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const yRange = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const opacityRange = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white overflow-hidden">
+      {/* Navigation */}
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10 supports-backdrop-blur:bg-black/10"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2 group">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Network className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              CPN-AI
+            </span>
+          </Link>
+
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#features" className="text-gray-300 hover:text-white transition-colors hover:scale-105">Features</a>
+            <a href="#how-it-works" className="text-gray-300 hover:text-white transition-colors hover:scale-105">How It Works</a>
+            <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors hover:scale-105">Success Stories</a>
+            <Link href="/home" className="text-gray-300 hover:text-white transition-colors hover:scale-105">Platform</Link>
+          </div>
+
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="hidden sm:flex items-center space-x-2">
+              <Link href="/signin">
+                <Button variant="ghost" className="text-white hover:bg-white/10 text-sm sm:text-base px-3 sm:px-4">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-sm sm:text-base px-3 sm:px-6 hover:scale-105 transition-transform">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden text-white hover:bg-white/10"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="md:hidden absolute top-full left-0 right-0 bg-black/90 backdrop-blur-xl border-b border-white/10 p-6"
+            >
+              <div className="flex flex-col space-y-4">
+                <a
+                  href="#features"
+                  className="text-gray-300 hover:text-white transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="text-gray-300 hover:text-white transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How It Works
+                </a>
+                <a
+                  href="#testimonials"
+                  className="text-gray-300 hover:text-white transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Success Stories
+                </a>
+                <Link
+                  href="/home"
+                  className="text-gray-300 hover:text-white transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Platform
                 </Link>
+                <div className="flex flex-col space-y-3 pt-4 border-t border-white/10">
+                  <Link href="/signin" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="text-white hover:bg-white/10 w-full justify-start">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 w-full">
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.nav>
+
+      {/* Hero Section */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-20">
+        <motion.div
+          style={{ y: yRange, opacity: opacityRange }}
+          className="absolute inset-0 z-0"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-3xl" />
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-cyan-500/30 rounded-full blur-2xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse delay-500" />
+
+          {/* Floating particles */}
+          <div className="absolute top-1/3 left-1/3 w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-300" />
+          <div className="absolute top-2/3 right-1/3 w-1 h-1 bg-cyan-400 rounded-full animate-bounce delay-700" />
+          <div className="absolute top-1/2 left-1/5 w-1.5 h-1.5 bg-pink-400 rounded-full animate-bounce delay-1000" />
+        </motion.div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={heroInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <Badge className="mb-6 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-purple-300 border-purple-500/30">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Open Innovation Platform
+            </Badge>
+
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Campus Projects &{' '}
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                Proof Network
+              </span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed">
+              The ultimate campus-wide OS where students collaborate on projects,
+              maintain verifiable progress diaries, and get AI-powered strategic guidance
+              through <span className="text-purple-400 font-semibold">ScholarPulse</span> & <span className="text-cyan-400 font-semibold">CareerPulse</span> engines.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-lg px-8 py-4 shadow-2xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300">
+                  Start Your Journey
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-4 backdrop-blur-sm hover:scale-105 transition-all duration-300">
+                <Play className="mr-2 w-5 h-5" />
+                Watch Demo
               </Button>
             </div>
+
+            {/* Hero Stats */}
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto"
+              variants={staggerContainer}
+              initial="initial"
+              animate={heroInView ? "animate" : "initial"}
+            >
+              {[
+                { label: "Active Projects", value: "2,500+", icon: Rocket },
+                { label: "Research Papers", value: "15K+", icon: BookOpen },
+                { label: "Success Rate", value: "94%", icon: Award }
+              ].map((stat, idx) => (
+                <motion.div key={idx} variants={fadeInUp} className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <stat.icon className="w-6 h-6 text-purple-400 mr-2" />
+                    <span className="text-2xl font-bold text-white">{stat.value}</span>
           </div>
-
-          <div className="mx-auto -mt-16 max-w-7xl">
-            <div className="perspective-distant -mr-16 pl-16 lg:-mr-56 lg:pl-56">
-              <div className="[transform:rotateX(20deg);]">
-                <div className="lg:h-176 relative skew-x-[.36rad]">
-                  <div
-                    aria-hidden
-                    className="bg-linear-to-b from-background to-background z-1 absolute -inset-16 via-transparent sm:-inset-32"
-                  />
-                  <div
-                    aria-hidden
-                    className="bg-linear-to-r from-background to-background z-1 absolute -inset-16 bg-white/50 via-transparent sm:-inset-32 dark:bg-transparent"
-                  />
-
-                  <div
-                    aria-hidden
-                    className="absolute -inset-16 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] bg-[size:24px_24px] [--color-border:var(--color-zinc-400)] sm:-inset-32 dark:[--color-border:color-mix(in_oklab,var(--color-white)_20%,transparent)]"
-                  />
-                  <div
-                    aria-hidden
-                    className="from-background z-11 absolute inset-0 bg-gradient-to-l"
-                  />
-                  <div
-                    aria-hidden
-                    className="z-2 absolute inset-0 size-full items-center px-5 py-24 [background:radial-gradient(125%_125%_at_50%_10%,transparent_40%,var(--color-background)_100%)]"
-                  />
-                  <div
-                    aria-hidden
-                    className="z-2 absolute inset-0 size-full items-center px-5 py-24 [background:radial-gradient(125%_125%_at_50%_10%,transparent_40%,var(--color-background)_100%)]"
-                  />
-
-                  <Image
-                    className="rounded-(--radius) z-1 relative border dark:hidden"
-                    src="/asset/360_F_270952103_2zSDVMWHM7KFOXmO0Dko0pYOE9aCs07k.jpg"
-                    alt="tailus ui hero section"
-                    width={2880}
-                    height={2074}
-                  />
-                  <Image
-                    className="rounded-(--radius) z-1 relative hidden border dark:block"
-                    src="/asset/360_F_270952103_2zSDVMWHM7KFOXmO0Dko0pYOE9aCs07k.jpg"
-                    alt="tailus ui hero section"
-                    width={2880}
-                    height={2074}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        {/*Clients Section*/}
-        <section id="clients" className="bg-background pb-2">
-          <div className="group relative m-auto max-w-7xl px-6">
-            <div className="flex flex-col items-center md:flex-row">
-              <div className="md:max-w-44 md:border-r md:pr-6">
-                <p className="text-end text-sm">Powering the best teams</p>
-              </div>
-              <div className="relative py-6 md:w-[calc(100%-11rem)]">
-                <InfiniteSlider speedOnHover={20} speed={40} gap={112}>
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-5 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/nvidia.svg"
-                      alt="Nvidia Logo"
-                      height="20"
-                      width="auto"
-                    />
-                  </div>
-
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-4 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/column.svg"
-                      alt="Column Logo"
-                      height="16"
-                      width="auto"
-                    />
-                  </div>
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-4 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/github.svg"
-                      alt="GitHub Logo"
-                      height="16"
-                      width="auto"
-                    />
-                  </div>
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-5 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/nike.svg"
-                      alt="Nike Logo"
-                      height="20"
-                      width="auto"
-                    />
-                  </div>
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-5 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/lemonsqueezy.svg"
-                      alt="Lemon Squeezy Logo"
-                      height="20"
-                      width="auto"
-                    />
-                  </div>
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-4 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/laravel.svg"
-                      alt="Laravel Logo"
-                      height="16"
-                      width="auto"
-                    />
-                  </div>
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-7 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/lilly.svg"
-                      alt="Lilly Logo"
-                      height="28"
-                      width="auto"
-                    />
-                  </div>
-
-                  <div className="flex">
-                    <img
-                      className="mx-auto h-6 w-fit dark:invert"
-                      src="https://html.tailus.io/blocks/customers/openai.svg"
-                      alt="OpenAI Logo"
-                      height="24"
-                      width="auto"
-                    />
-                  </div>
-                </InfiniteSlider>
-
-                <div className="bg-linear-to-r from-background absolute inset-y-0 left-0 w-20"></div>
-                <div className="bg-linear-to-l from-background absolute inset-y-0 right-0 w-20"></div>
-                <ProgressiveBlur
-                  className="pointer-events-none absolute left-0 top-0 h-full w-20"
-                  direction="left"
-                  blurIntensity={1}
-                />
-                <ProgressiveBlur
-                  className="pointer-events-none absolute right-0 top-0 h-full w-20"
-                  direction="right"
-                  blurIntensity={1}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-        {/* Features Section */}
-        <section id="features" className="overflow-hidden py-16 md:py-32">
-          <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-12">
-            <div className="relative z-10 max-w-2xl">
-              <h2 className="text-4xl font-semibold lg:text-5xl">
-                Built for Scaling teams
-              </h2>
-              <p className="mt-6 text-lg">
-                Empower your team with workflows that adapt to your needs,
-                whether you prefer git synchronization or a AI Agents interface.
-              </p>
-            </div>
-            <div className="relative -mx-4 rounded-3xl p-3 md:-mx-12 lg:col-span-3">
-              <div className="perspective-midrange">
-                <div className="rotate-x-6 -skew-2">
-                  <div className="aspect-88/36 relative">
-                    <div className="bg-radial-[at_75%_25%] to-background z-1 -inset-17 absolute from-transparent to-75%"></div>
-                    {/* <Image src="/asset/large@2x.pngg" className="absolute inset-0 z-10" alt="payments illustration dark" width={2797} height={1137} /> */}
-                    <Image
-                      src="/asset/large@2x.png"
-                      className="hidden dark:block"
-                      alt="payments illustration dark"
-                      width={2797}
-                      height={1137}
-                    />
-                    <Image
-                      src="/asset/large@2x.png"
-                      className="dark:hidden"
-                      alt="payments illustration light"
-                      width={2797}
-                      height={1137}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="relative mx-auto grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 lg:grid-cols-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="size-4" />
-                  <h3 className="text-sm font-medium">Faaast</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  It supports an entire helping developers and innovate.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Cpu className="size-4" />
-                  <h3 className="text-sm font-medium">Powerful</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  It supports an entire helping developers and businesses.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Lock className="size-4" />
-                  <h3 className="text-sm font-medium">Security</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  It supports an helping developers businesses innovate.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-4" />
-
-                  <h3 className="text-sm font-medium">AI Powered</h3>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  It supports an helping developers businesses innovate.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* content section */}
-        <section id="content" className="py-16 md:py-32">
-          <div className="mx-auto max-w-5xl px-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold">
-                Built by the Community <br /> for the Community
-              </h2>
-              <p className="mt-6">
-                Harum quae dolore orrupti aut temporibus ariatur.
-              </p>
-            </div>
-            <div className="mx-auto mt-12 flex max-w-lg flex-wrap justify-center gap-3">
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/1.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/2.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/3.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/4.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/5.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/6.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/7.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/1.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/8.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/9.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-              <Link
-                href="https://github.com/meschacirung"
-                target="_blank"
-                title="Méschac Irung"
-                className="size-16 rounded-full border *:size-full *:rounded-full *:object-cover"
-              >
-                <img
-                  alt="John Doe"
-                  src="https://randomuser.me/api/portraits/men/10.jpg"
-                  loading="lazy"
-                  width={120}
-                  height={120}
-                />
-              </Link>
-            </div>
-          </div>
-        </section>
-        {/* stats */}
-        <section id="stats" className="py-12 md:py-20">
-          <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16">
-            <div className="relative z-10 mx-auto max-w-xl space-y-6 text-center">
-              <h2 className="text-4xl font-medium lg:text-5xl">
-                Tailus UI in numbers
-              </h2>
-              <p>
-                Gemini is evolving to be more than just the models. It supports
-                an entire to the APIs and platforms helping developers and
-                businesses innovate.
-              </p>
+                  <p className="text-gray-400">{stat.label}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
             </div>
 
-            <div className="grid gap-12 divide-y *:text-center md:grid-cols-3 md:gap-2 md:divide-x md:divide-y-0">
-              <div className="space-y-4">
-                <div className="text-5xl font-bold">+1200</div>
-                <p>Stars on GitHub</p>
-              </div>
-              <div className="space-y-4">
-                <div className="text-5xl font-bold">22 Million</div>
-                <p>Active Users</p>
-              </div>
-              <div className="space-y-4">
-                <div className="text-5xl font-bold">+500</div>
-                <p>Powered Apps</p>
-              </div>
-            </div>
-          </div>
-        </section>
-        {/*Our team section */}
-        <section
-          id="team"
-          className="bg-gray-50 py-16 md:py-32 dark:bg-transparent"
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ repeat: Infinity, duration: 2 }}
         >
-          <div className="mx-auto max-w-5xl border-t px-6">
-            <span className="text-caption -ml-6 -mt-3.5 block w-max bg-gray-50 px-6 dark:bg-gray-950">
-              Team
-            </span>
-            <div className="mt-12 gap-4 sm:grid sm:grid-cols-2 md:mt-24">
-              <div className="sm:w-2/5">
-                <h2 className="text-3xl font-bold sm:text-4xl">
-                  Our dream team
+          <ChevronDown className="w-6 h-6 text-gray-400" />
+        </motion.div>
+      </section>
+
+      {/* Core Features Section */}
+      <section id="features" ref={featuresRef} className="py-24 relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 50 }}
+            animate={featuresInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Revolutionary Campus
+              <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent"> Innovation</span>
                 </h2>
-              </div>
-              <div className="mt-6 sm:mt-0">
-                <p>
-                  During the working process, we perform regular fitting with
-                  the client because he is the only person who can feel whether
-                  a new suit fits or not.
-                </p>
-              </div>
-            </div>
-            <div className="mt-12 md:mt-24">
-              <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-                {members.map((member, index) => (
-                  <div key={index} className="group overflow-hidden">
-                    <img
-                      className="h-96 w-full rounded-md object-cover object-top grayscale transition-all duration-500 hover:grayscale-0 group-hover:h-[22.5rem] group-hover:rounded-xl"
-                      src={member.avatar || "/placeholder.svg"}
-                      alt="team member"
-                      width="826"
-                      height="1239"
-                    />
-                    <div className="px-2 pt-2 sm:pb-0 sm:pt-4">
-                      <div className="flex justify-between">
-                        <h3 className="text-title text-base font-medium transition-all duration-500 group-hover:tracking-wider">
-                          {member.name}
-                        </h3>
-                        <span className="text-xs">_0{index + 1}</span>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Five integrated pillars that transform how students learn, collaborate, and succeed
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            animate={featuresInView ? "animate" : "initial"}
+          >
+            {[
+              {
+                icon: Users,
+                title: "Project Execution & Proof",
+                description: "Milestone-driven project rooms with supervisor workflows and blockchain-verified progress diaries",
+                features: ["Real-time collaboration", "Milestone tracking", "Supervisor approvals", "Verifiable logs"]
+              },
+              {
+                icon: Brain,
+                title: "AI-Powered Learning",
+                description: "Ask-Your-Library RAG system, design helpers, and course-aware study acceleration",
+                features: ["Smart research assistance", "Method comparisons", "Reproducibility checks", "Study planning"]
+              },
+              {
+                icon: TrendingUp,
+                title: "ScholarPulse Engine",
+                description: "Research trend analysis that guides what to study, build, and publish next",
+                features: ["Topic velocity tracking", "Collaboration targets", "Grant opportunities", "Focus mapping"]
+              },
+              {
+                icon: Target,
+                title: "CareerPulse Engine",
+                description: "Job market intelligence that creates personalized skill development paths",
+                features: ["Market demand analysis", "Skill gap identification", "Portfolio planning", "Company matching"]
+              },
+              {
+                icon: Shield,
+                title: "Blockchain Integrity",
+                description: "Immutable proof of research provenance, submission integrity, and achievement verification",
+                features: ["Tamper-proof records", "Research provenance", "Achievement badges", "Trust network"]
+              },
+              {
+                icon: Eye,
+                title: "Discovery & Outcomes",
+                description: "Verified campus feed, searchable archives, and credible project showcases",
+                features: ["Project portfolios", "Achievement feed", "Archive search", "Impact tracking"]
+              }
+            ].map((feature, idx) => (
+              <motion.div key={idx} variants={scaleIn}>
+                <Card className="h-full bg-gradient-to-br from-gray-900/30 to-gray-800/30 backdrop-blur-xl border-gray-700/30 hover:border-purple-500/50 transition-all duration-500 group hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-2">
+                  <CardContent className="p-6 relative overflow-hidden">
+                    {/* Hover gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    <div className="relative z-10">
+                      <div className="flex items-center mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                          <feature.icon className="w-6 h-6 text-purple-400 group-hover:text-purple-300" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-white group-hover:text-purple-200">{feature.title}</h3>
                       </div>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-muted-foreground inline-block translate-y-6 text-sm opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                          {member.role}
-                        </span>
-                        <Link
-                          href={member.link}
-                          className="group-hover:text-primary-600 dark:group-hover:text-primary-400 inline-block translate-y-8 text-sm tracking-wide opacity-0 transition-all duration-500 hover:underline group-hover:translate-y-0 group-hover:opacity-100"
-                        >
-                          {" "}
-                          Linktree
-                        </Link>
-                      </div>
+                      <p className="text-gray-300 mb-4 group-hover:text-gray-200">{feature.description}</p>
+                      <ul className="space-y-2">
+                        {feature.features.map((item, itemIdx) => (
+                          <li key={itemIdx} className="flex items-center text-sm text-gray-400 group-hover:text-gray-300">
+                            <CheckCircle className="w-4 h-4 text-green-400 mr-2 flex-shrink-0 group-hover:text-green-300" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-        {/*Testimonials*/}
-        <section id="testimonials" className="py-16 md:py-32">
-          <div className="mx-auto max-w-6xl space-y-8 px-6 md:space-y-16">
-            <div className="relative z-10 mx-auto max-w-xl space-y-6 text-center md:space-y-12">
-              <h2 className="text-4xl font-medium lg:text-5xl">
-                Build by makers, loved by thousand developers
-              </h2>
-              <p>
-                Gemini is evolving to be more than just the models. It supports
-                an entire to the APIs and platforms helping developers and
-                businesses innovate.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-rows-2">
-              <Card className="grid grid-rows-[auto_1fr] gap-8 sm:col-span-2 sm:p-6 lg:row-span-2">
-                <CardHeader>
-                  <img
-                    className="h-6 w-fit dark:invert"
-                    src="https://html.tailus.io/blocks/customers/nike.svg"
-                    alt="Nike Logo"
-                    height="24"
-                    width="auto"
-                  />
-                </CardHeader>
-                <CardContent>
-                  <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                    <p className="text-xl font-medium">
-                      Tailus has transformed the way I develop web applications.
-                      Their extensive collection of UI components, blocks, and
-                      templates has significantly accelerated my workflow. The
-                      flexibility to customize every aspect allows me to create
-                      unique user experiences. Tailus is a game-changer for
-                      modern web development
-                    </p>
-
-                    <div className="grid grid-cols-[auto_1fr] items-center gap-3">
-                      <Avatar className="size-12">
-                        <AvatarImage
-                          src="https://tailus.io/images/reviews/shekinah.webp"
-                          alt="Shekinah Tshiokufila"
-                          height="400"
-                          width="400"
-                          loading="lazy"
-                        />
-                        <AvatarFallback>ST</AvatarFallback>
-                      </Avatar>
-
-                      <div>
-                        <cite className="text-sm font-medium">
-                          Shekinah Tshiokufila
-                        </cite>
-                        <span className="text-muted-foreground block text-sm">
-                          Software Ingineer
-                        </span>
-                      </div>
-                    </div>
-                  </blockquote>
-                </CardContent>
-              </Card>
-              <Card className="md:col-span-2">
-                <CardContent className="h-full pt-6">
-                  <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                    <p className="text-xl font-medium">
-                      Tailus is really extraordinary and very practical, no need
-                      to break your head. A real gold mine.
-                    </p>
-
-                    <div className="grid grid-cols-[auto_1fr] items-center gap-3">
-                      <Avatar className="size-12">
-                        <AvatarImage
-                          src="https://tailus.io/images/reviews/jonathan.webp"
-                          alt="Jonathan Yombo"
-                          height="400"
-                          width="400"
-                          loading="lazy"
-                        />
-                        <AvatarFallback>JY</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <cite className="text-sm font-medium">
-                          Jonathan Yombo
-                        </cite>
-                        <span className="text-muted-foreground block text-sm">
-                          Software Ingineer
-                        </span>
-                      </div>
-                    </div>
-                  </blockquote>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="h-full pt-6">
-                  <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                    <p>
-                      Great work on tailfolio template. This is one of the best
-                      personal website that I have seen so far!
-                    </p>
-
-                    <div className="grid items-center gap-3 [grid-template-columns:auto_1fr]">
-                      <Avatar className="size-12">
-                        <AvatarImage
-                          src="https://tailus.io/images/reviews/yucel.webp"
-                          alt="Yucel Faruksahan"
-                          height="400"
-                          width="400"
-                          loading="lazy"
-                        />
-                        <AvatarFallback>YF</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <cite className="text-sm font-medium">
-                          Yucel Faruksahan
-                        </cite>
-                        <span className="text-muted-foreground block text-sm">
-                          Creator, Tailkits
-                        </span>
-                      </div>
-                    </div>
-                  </blockquote>
-                </CardContent>
-              </Card>
-              <Card className="card variant-mixed">
-                <CardContent className="h-full pt-6">
-                  <blockquote className="grid h-full grid-rows-[1fr_auto] gap-6">
-                    <p>
-                      Great work on tailfolio template. This is one of the best
-                      personal website that I have seen so far!
-                    </p>
-
-                    <div className="grid grid-cols-[auto_1fr] gap-3">
-                      <Avatar className="size-12">
-                        <AvatarImage
-                          src="https://tailus.io/images/reviews/rodrigo.webp"
-                          alt="Rodrigo Aguilar"
-                          height="400"
-                          width="400"
-                          loading="lazy"
-                        />
-                        <AvatarFallback>YF</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">Rodrigo Aguilar</p>
-                        <span className="text-muted-foreground block text-sm">
-                          Creator, TailwindAwesome
-                        </span>
-                      </div>
-                    </div>
-                  </blockquote>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-        {/* Call to Action */}
-        <section id="cta" className="py-16 md:py-32">
-          <div className="mx-auto max-w-5xl px-6">
-            <div className="text-center">
-              <h2 className="text-balance text-4xl font-semibold lg:text-5xl">
-                Start Building
-              </h2>
-              <p className="mt-4">
-                Libero sapiente aliquam quibusdam aspernatur.
-              </p>
-
-              <div className="mt-12 flex flex-wrap justify-center gap-4">
-                <Button asChild size="lg">
-                  <Link href="/">
-                    <span>Get Started</span>
-                  </Link>
-                </Button>
-
-                <Button asChild size="lg" variant="outline">
-                  <Link href="/">
-                    <span>Book Demo</span>
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-        {/* pricing */}
-        <section id="pricing" className="py-16 md:py-32">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="mx-auto max-w-2xl space-y-6 text-center">
-              <h1 className="text-center text-4xl font-semibold lg:text-5xl">
-                Pricing that Scales with You
-              </h1>
-              <p>
-                Gemini is evolving to be more than just the models. It supports
-                an entire to the APIs and platforms helping developers and
-                businesses innovate.
-              </p>
-            </div>
-
-            <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-3">
-              <Card className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="font-medium">Free</CardTitle>
-                  <span className="my-3 block text-2xl font-semibold">
-                    $0 / mo
-                  </span>
-                  <CardDescription className="text-sm">
-                    Per editor
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <hr className="border-dashed" />
-
-                  <ul className="list-outside space-y-3 text-sm">
-                    {[
-                      "Basic Analytics Dashboard",
-                      "5GB Cloud Storage",
-                      "Email and Chat Support",
-                    ].map((item, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <Check className="size-3" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-
-                <CardFooter className="mt-auto">
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="">Get Started</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <Card className="relative">
-                <span className="bg-linear-to-br/increasing absolute inset-x-0 -top-3 mx-auto flex h-6 w-fit items-center rounded-full from-purple-400 to-amber-300 px-3 py-1 text-xs font-medium text-amber-950 ring-1 ring-inset ring-white/20 ring-offset-1 ring-offset-gray-950/5">
-                  Popular
-                </span>
-
-                <div className="flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="font-medium">Pro</CardTitle>
-                    <span className="my-3 block text-2xl font-semibold">
-                      $19 / mo
-                    </span>
-                    <CardDescription className="text-sm">
-                      Per editor
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <hr className="border-dashed" />
-                    <ul className="list-outside space-y-3 text-sm">
-                      {[
-                        "Everything in Free Plan",
-                        "5GB Cloud Storage",
-                        "Email and Chat Support",
-                        "Access to Community Forum",
-                        "Single User Access",
-                        "Access to Basic Templates",
-                        "Mobile App Access",
-                        "1 Custom Report Per Month",
-                        "Monthly Product Updates",
-                        "Standard Security Features",
-                      ].map((item, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <Check className="size-3" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
                   </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
-                  <CardFooter>
-                    <Button asChild className="w-full">
-                      <Link href="">Get Started</Link>
-                    </Button>
-                  </CardFooter>
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24 bg-gradient-to-r from-gray-900/30 to-gray-800/30">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              How <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">CPN-AI</span> Works
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              A seamless flow from project inception to career success
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Create Project Room",
+                description: "Set up collaborative spaces with milestones, tasks, and supervisor workflows",
+                icon: Users
+              },
+              {
+                step: "02",
+                title: "Build & Document",
+                description: "Work with AI assistance while maintaining a verifiable progress diary",
+                icon: Brain
+              },
+              {
+                step: "03",
+                title: "Get Strategic Insights",
+                description: "Receive guidance from ScholarPulse and CareerPulse engines",
+                icon: TrendingUp
+              },
+              {
+                step: "04",
+                title: "Showcase & Succeed",
+                description: "Publish verified achievements and discover new opportunities",
+                icon: Award
+              }
+            ].map((step, idx) => (
+              <motion.div
+                key={idx}
+                className="text-center"
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <step.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-sm font-bold text-purple-400">
+                    {step.step}
+              </div>
                 </div>
-              </Card>
-
-              <Card className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="font-medium">Startup</CardTitle>
-                  <span className="my-3 block text-2xl font-semibold">
-                    $29 / mo
-                  </span>
-                  <CardDescription className="text-sm">
-                    Per editor
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <hr className="border-dashed" />
-
-                  <ul className="list-outside space-y-3 text-sm">
-                    {[
-                      "Everything in Pro Plan",
-                      "5GB Cloud Storage",
-                      "Email and Chat Support",
-                    ].map((item, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <Check className="size-3" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-
-                <CardFooter className="mt-auto">
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="">Get Started</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+                <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
+                <p className="text-gray-300">{step.description}</p>
+              </motion.div>
+            ))}
             </div>
           </div>
         </section>
-        {/* footer */}
-      </main>
-    </>
+
+      {/* Stats Section */}
+      <section ref={statsRef} className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-cyan-900/20" />
+        <div className="relative max-w-7xl mx-auto px-6">
+          <motion.div
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
+            variants={staggerContainer}
+            initial="initial"
+            animate={statsInView ? "animate" : "initial"}
+          >
+            {[
+              { value: "50K+", label: "Students Empowered", icon: Users },
+              { value: "2.5K+", label: "Active Projects", icon: Rocket },
+              { value: "94%", label: "Success Rate", icon: TrendingUp },
+              { value: "15K+", label: "Research Papers", icon: BookOpen }
+            ].map((stat, idx) => (
+              <motion.div key={idx} variants={fadeInUp}>
+                <div className="flex items-center justify-center mb-4">
+                  <stat.icon className="w-8 h-8 text-purple-400 mr-3" />
+                      </div>
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.value}</div>
+                <div className="text-gray-300">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+                    </div>
+      </section>
+
+      {/* Testimonials */}
+      <section id="testimonials" ref={testimonialsRef} className="py-24 bg-gradient-to-r from-gray-900/50 to-gray-800/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 50 }}
+            animate={testimonialsInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Success <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Stories</span>
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Real students, real results, real impact
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            animate={testimonialsInView ? "animate" : "initial"}
+          >
+            {[
+              {
+                name: "Sarah Chen",
+                role: "CS PhD Student",
+                university: "Stanford University",
+                quote: "CPN-AI's ScholarPulse helped me identify emerging research gaps. I published 3 papers in top-tier conferences using their strategic insights.",
+                rating: 5,
+                avatar: "SC"
+              },
+              {
+                name: "Marcus Johnson",
+                role: "Engineering Student",
+                university: "MIT",
+                quote: "The verifiable project diary was a game-changer. Recruiters loved seeing my authenticated progress, and I landed my dream internship at Google.",
+                rating: 5,
+                avatar: "MJ"
+              },
+              {
+                name: "Dr. Priya Patel",
+                role: "Research Supervisor",
+                university: "UC Berkeley",
+                quote: "Managing 20+ student projects became effortless. The milestone tracking and AI insights help me guide students more effectively.",
+                rating: 5,
+                avatar: "PP"
+              }
+            ].map((testimonial, idx) => (
+              <motion.div key={idx} variants={scaleIn}>
+                <Card className="h-full bg-gradient-to-br from-gray-800/50 to-gray-700/50 border-gray-600/50 hover:border-purple-500/50 transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                        {testimonial.avatar}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white">{testimonial.name}</h4>
+                        <p className="text-sm text-gray-400">{testimonial.role}</p>
+                        <p className="text-xs text-purple-400">{testimonial.university}</p>
+                      </div>
+                    </div>
+                    <div className="flex mb-4">
+                      {Array(testimonial.rating).fill(0).map((_, i) => (
+                        <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-gray-300 italic">"{testimonial.quote}"</p>
+                </CardContent>
+              </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+          </div>
+        </section>
+
+      {/* CTA Section */}
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-cyan-600/20" />
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Ready to Transform Your
+              <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent"> Academic Journey?</span>
+              </h2>
+            <p className="text-xl text-gray-300 mb-8">
+              Join thousands of students already building the future with CPN-AI
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-lg px-8 py-4 shadow-2xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300 group">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-4 backdrop-blur-sm hover:scale-105 transition-all duration-300 group">
+                Schedule Demo
+                <Coffee className="ml-2 w-5 h-5 group-hover:rotate-12 transition-transform" />
+              </Button>
+            </div>
+          </motion.div>
+          </div>
+        </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900/80 border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                  <Network className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                  CPN-AI
+                </span>
+              </div>
+              <p className="text-gray-400 mb-4">
+                Campus Projects & Proof Network - Where innovation meets verification.
+              </p>
+              <div className="flex space-x-4">
+                <Github className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+                <Twitter className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+                <Linkedin className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+                <Globe className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+                  </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Community</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
+                  </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 CPN-AI. All rights reserved. Built with ❤️ for the future of education.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
