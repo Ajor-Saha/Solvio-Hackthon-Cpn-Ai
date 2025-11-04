@@ -13,7 +13,7 @@ import { verifyJWT } from '../middleware/auth-middleware';
 
 const researchRouter = Router();
 
-// Public routes (no auth required) - for published research
+// Public routes (no auth required) -for published research
 researchRouter.route('/').get(listResearches);
 researchRouter.route('/:researchId').get(getResearchById);
 
