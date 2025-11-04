@@ -1,301 +1,232 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Axios } from "@/config/axios";
-import { env } from "@/config/env";
-import useAuthStore from "@/store/store";
-import { Briefcase, Plus, Search, TrendingUp, Users, Calendar, Archive } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Axios } from '@/config/axios';
+import { env } from '@/config/env';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Briefcase, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
-interface Job {
-  jobId: string;
-  title: string;
-  description: string;
-  companyName?: string;
-  location?: string;
-  jobType: string;
-  externalUrl: string;
-  applicationDeadline?: string;
-  status: string;
-  publishedAt?: string;
-  createdAt: string;
-}
+const jobSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  companyName: z.string().optional(),
+  location: z.string().optional(),
+  jobType: z.enum(['full_time', 'part_time', 'internship', 'contract', 'remote']),
+  externalUrl: z.string().url('Must be a valid URL'),
+  applicationDeadline: z.string().optional(),
+  status: z.enum(['draft', 'active', 'closed', 'archived']).default('draft'),
+});
 
-interface JobStats {
-  total: number;
-  active: number;
-  draft: number;
-  closed: number;
-}
+type JobFormData = z.infer<typeof jobSchema>;
 
 export default function JobsPage() {
-  const { user } = useAuthStore();
-  const router = useRouter();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [stats, setStats] = useState<JobStats>({ total: 0, active: 0, draft: 0, closed: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [jobTypeFilter, setJobTypeFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user?.role !== "department_admin") {
-      router.push("/dashboard");
-      return;
-    }
-    fetchData();
-  }, [user, statusFilter, jobTypeFilter, searchQuery]);
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<JobFormData>({
+    resolver: zodResolver(jobSchema),
+    defaultValues: {
+      jobType: 'full_time',
+      status: 'draft',
+    },
+  });
 
-  const fetchData = async () => {
+  const onSubmit = async (data: JobFormData) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const [jobsResponse, statsResponse] = await Promise.all([
-        Axios.get(`${env.BACKEND_BASE_URL}/api/jobs`, {
-          params: {
-            q: searchQuery || undefined,
-            jobStatus: statusFilter === "all" ? undefined : statusFilter,
-            jobType: jobTypeFilter === "all" ? undefined : jobTypeFilter,
-            limit: 20,
-          },
-        }),
-        Axios.get(`${env.BACKEND_BASE_URL}/api/jobs/admin/stats`),
-      ]);
+      const response = await Axios.post(`${env.BACKEND_BASE_URL}/api/jobs`, data);
 
-      if (jobsResponse.data.success) {
-        setJobs(jobsResponse.data.data.data || []);
-      }
-      if (statsResponse.data.success) {
-        setStats(statsResponse.data.data);
+      if (response.data.success) {
+        toast.success('Job posting created successfully!');
+        reset();
+      } else {
+        toast.error(response.data.message || 'Failed to create job posting');
       }
     } catch (error: any) {
-      console.error("Error fetching jobs:", error);
-      toast.error("Failed to load jobs");
+      console.error('Error creating job:', error);
+      toast.error(error.response?.data?.message || 'Failed to create job posting');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (jobId: string) => {
-    if (!confirm("Are you sure you want to delete this job posting?")) return;
-
-    try {
-      const response = await Axios.delete(`${env.BACKEND_BASE_URL}/api/jobs/${jobId}`);
-      if (response.data.success) {
-        toast.success("Job deleted successfully");
-        fetchData();
-      }
-    } catch (error: any) {
-      console.error("Error deleting job:", error);
-      toast.error("Failed to delete job");
-    }
-  };
-
-  if (user?.role !== "department_admin") {
-    return null;
-  }
-
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Briefcase className="h-8 w-8 text-primary" />
-            Job Opportunities
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage job postings and career opportunities for your department
-          </p>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <Briefcase className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-bold">Job Postings</h1>
         </div>
-        <Link href="/announcement/jobs/create">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Post New Job
-          </Button>
-        </Link>
+        <p className="text-gray-600">Create and manage job opportunities for students</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Draft</CardTitle>
-            <Users className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.draft}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Closed</CardTitle>
-            <Archive className="h-4 w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{stats.closed}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Create New Job Posting
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <fieldset disabled={isLoading}>
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Job Title *</Label>
+                <Input
+                  id="title"
+                  {...register('title')}
+                  placeholder="e.g., Software Engineer Intern"
+                />
+                {errors.title && (
+                  <p className="text-sm text-red-600">{errors.title.message}</p>
+                )}
+              </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search jobs by title, company, or description..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="full_time">Full Time</SelectItem>
-            <SelectItem value="part_time">Part Time</SelectItem>
-            <SelectItem value="internship">Internship</SelectItem>
-            <SelectItem value="contract">Contract</SelectItem>
-            <SelectItem value="remote">Remote</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+              &nbsp;&nbsp;
 
-      {/* Jobs Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Job Description *</Label>
+                <Textarea
+                  id="description"
+                  {...register('description')}
+                  placeholder="Detailed job description, requirements, and responsibilities..."
+                  rows={6}
+                />
+                {errors.description && (
+                  <p className="text-sm text-red-600">{errors.description.message}</p>
+                )}
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Company Name & Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    {...register('companyName')}
+                    placeholder="e.g., Google, Microsoft"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : jobs.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <Briefcase className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Jobs Found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== "all" || jobTypeFilter !== "all"
-                ? "No jobs match your current filters"
-                : "Start by creating your first job posting"}
-            </p>
-            <Link href="/announcement/jobs/create">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Post Your First Job
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job) => (
-            <Card key={job.jobId} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg mb-1">{job.title}</CardTitle>
-                    {job.companyName && (
-                      <p className="text-sm text-muted-foreground">{job.companyName}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        job.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : job.status === "draft"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {job.status}
-                    </span>
-                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
-                      {job.jobType.replace("_", " ")}
-                    </span>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    {...register('location')}
+                    placeholder="e.g., San Francisco, Remote"
+                  />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {job.description}
-                </p>
-                {job.location && (
-                  <p className="text-sm text-muted-foreground mb-2">📍 {job.location}</p>
-                )}
-                {job.applicationDeadline && (
-                  <p className="text-sm text-muted-foreground mb-4 flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <Link href={`/announcement/jobs/${job.jobId}?edit=true`} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Edit
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(job.jobId)}
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Job Type & Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="jobType">Job Type *</Label>
+                  <Select
+                    value={watch('jobType')}
+                    onValueChange={(value) => setValue('jobType', value as any)}
                   >
-                    Delete
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select job type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full_time">Full Time</SelectItem>
+                      <SelectItem value="part_time">Part Time</SelectItem>
+                      <SelectItem value="internship">Internship</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                      <SelectItem value="remote">Remote</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={watch('status')}
+                    onValueChange={(value) => setValue('status', value as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* External URL */}
+              <div className="space-y-2">
+                <Label htmlFor="externalUrl">Application URL *</Label>
+                <Input
+                  id="externalUrl"
+                  {...register('externalUrl')}
+                  placeholder="https://company.com/careers/job-id"
+                  type="url"
+                />
+                {errors.externalUrl && (
+                  <p className="text-sm text-red-600">{errors.externalUrl.message}</p>
+                )}
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Application Deadline */}
+              <div className="space-y-2">
+                <Label htmlFor="applicationDeadline">Application Deadline</Label>
+                <Input
+                  id="applicationDeadline"
+                  {...register('applicationDeadline')}
+                  type="date"
+                />
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Submit Button */}
+              <div className="flex justify-center pt-4">
+                <Button type="submit" disabled={isLoading} className="px-8">
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Creating Job...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Create Job Posting
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </fieldset>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
