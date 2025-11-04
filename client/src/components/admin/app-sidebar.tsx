@@ -174,17 +174,17 @@ const getSidebarData = (role: string) => {
             items: [
               {
                 title: "Add Student",
-                url: "/employee?type=student",
+                url: "/department?type=student",
                 icon: <UserPlus size={16} />,
               },
               {
                 title: "Add Faculty",
-                url: "/employee?type=faculty",
+                url: "/department?type=faculty",
                 icon: <UserPlus size={16} />,
               },
               {
                 title: "Add Courses",
-                url: "/subjects",
+                url: "/department?type=add-course",
                 icon: <Plus size={16} />,
               },
             ],
