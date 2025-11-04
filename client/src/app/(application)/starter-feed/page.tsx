@@ -126,12 +126,12 @@ export default function InsightFeedPage() {
   const insightAISuggestions = [
     {
       type: "hackathon",
-      title: "NASA Space Apps Challenge 2024",
+      title: "NASA Space Apps Challenge 2025",
       description: "Perfect for your Software Engineering and Database courses! Build space-related solutions using real NASA data.",
       reason: "Based on your CSE-401 Software Engineering and CSE-301 Database courses",
       action: "Register Now",
       urgency: "high",
-      deadline: "Dec 15, 2024",
+      deadline: "Dec 15, 2025",
       icon: <Trophy className="w-5 h-5" />,
       color: "from-yellow-500 to-orange-500"
     },
