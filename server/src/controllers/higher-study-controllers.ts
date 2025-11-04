@@ -6,10 +6,7 @@ import { higherStudyTable } from '../db/schema';
 import { ApiResponse } from '../utils/api-response';
 import { asyncHandler } from '../utils/asyncHandler';
 
-/**
- * POST /api/higher-studies
- * Create new higher study opportunity (admin/faculty only)
- */
+
 export const createHigherStudy = asyncHandler(async (req: Request, res: Response) => {
   try {
     let {
