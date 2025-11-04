@@ -1,307 +1,272 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Axios } from "@/config/axios";
-import { env } from "@/config/env";
-import useAuthStore from "@/store/store";
-import { Microscope, Plus, Search, BookOpen, Users, Archive, Link as LinkIcon } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Axios } from '@/config/axios';
+import { env } from '@/config/env';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Microscope, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
-interface Research {
-  researchId: string;
+const researchSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
+  description: z.string().optional(),
+  courseId: z.string().min(1, 'Course ID is required'),
+  supervisorId: z.string().optional(),
+  status: z.enum(['proposed', 'ongoing', 'completed', 'published', 'archived']).default('proposed'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  publicationUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+});
+
+type ResearchFormData = z.infer<typeof researchSchema>;
+
+interface Course {
+  courseId: string;
+  courseCode: string;
   title: string;
-  description?: string;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-  publicationUrl?: string;
-  createdAt: string;
-  updatedAt: string;
 }
-
-interface ResearchStats {
-  total: number;
-  ongoing: number;
-  completed: number;
-  published: number;
-}
-
-const researchStatuses = [
-  { value: "proposed", label: "Proposed", color: "bg-gray-100 text-gray-800" },
-  { value: "ongoing", label: "Ongoing", color: "bg-blue-100 text-blue-800" },
-  { value: "completed", label: "Completed", color: "bg-green-100 text-green-800" },
-  { value: "published", label: "Published", color: "bg-purple-100 text-purple-800" },
-  { value: "archived", label: "Archived", color: "bg-yellow-100 text-yellow-800" },
-];
 
 export default function ResearchPage() {
-  const { user } = useAuthStore();
-  const router = useRouter();
-  const [research, setResearch] = useState<Research[]>([]);
-  const [stats, setStats] = useState<ResearchStats>({ total: 0, ongoing: 0, completed: 0, published: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
 
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<ResearchFormData>({
+    resolver: zodResolver(researchSchema),
+    defaultValues: {
+      status: 'proposed',
+    },
+  });
+
+  // Fetch courses for the dropdown
   useEffect(() => {
-    if (user?.role !== "department_admin") {
-      router.push("/dashboard");
-      return;
-    }
-    fetchData();
-  }, [user, statusFilter, searchQuery]);
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const [researchResponse, statsResponse] = await Promise.all([
-        Axios.get(`${env.BACKEND_BASE_URL}/api/research`, {
-          params: {
-            search: searchQuery || undefined,
-            status: statusFilter === "all" ? undefined : statusFilter,
-            limit: 20,
-          },
-        }),
-        Axios.get(`${env.BACKEND_BASE_URL}/api/research/admin/stats`),
-      ]);
-
-      if (researchResponse.data.success) {
-        setResearch(researchResponse.data.data.data || []);
+    const fetchCourses = async () => {
+      try {
+        const response = await Axios.get(`${env.BACKEND_BASE_URL}/api/course/department-courses`);
+        if (response.data.success) {
+          setCourses(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        toast.error('Failed to load courses');
+      } finally {
+        setLoadingCourses(false);
       }
-      if (statsResponse.data.success) {
-        setStats(statsResponse.data.data);
+    };
+
+    fetchCourses();
+  }, []);
+
+  const onSubmit = async (data: ResearchFormData) => {
+    setIsLoading(true);
+    try {
+      const response = await Axios.post(`${env.BACKEND_BASE_URL}/api/research`, data);
+
+      if (response.data.success) {
+        toast.success('Research project created successfully!');
+        reset();
+      } else {
+        toast.error(response.data.message || 'Failed to create research project');
       }
     } catch (error: any) {
-      console.error("Error fetching research:", error);
-      toast.error("Failed to load research");
+      console.error('Error creating research:', error);
+      toast.error(error.response?.data?.message || 'Failed to create research project');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (researchId: string) => {
-    if (!confirm("Are you sure you want to delete this research?")) return;
-
-    try {
-      const response = await Axios.delete(`${env.BACKEND_BASE_URL}/api/research/${researchId}`);
-      if (response.data.success) {
-        toast.success("Research deleted successfully");
-        fetchData();
-      }
-    } catch (error: any) {
-      console.error("Error deleting research:", error);
-      toast.error("Failed to delete research");
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    return researchStatuses.find(s => s.value === status)?.color || "bg-gray-100 text-gray-800";
-  };
-
-  const getStatusLabel = (status: string) => {
-    return researchStatuses.find(s => s.value === status)?.label || status;
-  };
-
-  if (user?.role !== "department_admin") {
-    return null;
-  }
-
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Microscope className="h-8 w-8 text-primary" />
-            Research Projects
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Manage research projects, publications, and academic work
-          </p>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <Microscope className="w-8 h-8 text-green-600" />
+          <h1 className="text-3xl font-bold">Research Projects</h1>
         </div>
-        <Link href="/announcement/research/create">
-          <Button size="lg" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Research
-          </Button>
-        </Link>
+        <p className="text-gray-600">Create and manage research projects and publications</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Microscope className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ongoing</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.ongoing}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <BookOpen className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <Archive className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.published}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search research by title or description..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            {researchStatuses.map((status) => (
-              <SelectItem key={status.value} value={status.value}>
-                {status.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Research Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : research.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <Microscope className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Research Found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== "all"
-                ? "No research projects match your current filters"
-                : "Start by adding your first research project"}
-            </p>
-            <Link href="/announcement/research/create">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Research
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {research.map((item) => (
-            <Card key={item.researchId} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg mb-2">{item.title}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`text-xs ${getStatusColor(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </Badge>
-                      {item.publicationUrl && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                          <LinkIcon className="h-3 w-3 mr-1" />
-                          Published
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {item.description && (
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                    {item.description}
-                  </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Create New Research Project
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <fieldset disabled={isLoading}>
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Research Title *</Label>
+                <Input
+                  id="title"
+                  {...register('title')}
+                  placeholder="e.g., Machine Learning Applications in Healthcare"
+                />
+                {errors.title && (
+                  <p className="text-sm text-red-600">{errors.title.message}</p>
                 )}
-                <div className="space-y-2 mb-4">
-                  {item.startDate && (
-                    <p className="text-sm text-muted-foreground">
-                      📅 Started: {new Date(item.startDate).toLocaleDateString()}
-                    </p>
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  {...register('description')}
+                  placeholder="Detailed description of the research project, objectives, methodology..."
+                  rows={5}
+                />
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Course ID & Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="courseId">Associated Course *</Label>
+                  {loadingCourses ? (
+                    <div className="flex items-center justify-center p-4 border rounded">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                      <span className="ml-2 text-gray-600">Loading courses...</span>
+                    </div>
+                  ) : (
+                    <Select
+                      value={watch('courseId')}
+                      onValueChange={(value) => setValue('courseId', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.courseId} value={course.courseId}>
+                            {course.courseCode} - {course.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
-                  {item.endDate && (
-                    <p className="text-sm text-muted-foreground">
-                      🏁 End: {new Date(item.endDate).toLocaleDateString()}
-                    </p>
-                  )}
-                  {item.publicationUrl && (
-                    <p className="text-sm text-muted-foreground">
-                      🔗 <a href={item.publicationUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        View Publication
-                      </a>
-                    </p>
+                  {errors.courseId && (
+                    <p className="text-sm text-red-600">{errors.courseId.message}</p>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Link href={`/announcement/research/${item.researchId}?edit=true`} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Edit
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(item.researchId)}
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={watch('status')}
+                    onValueChange={(value) => setValue('status', value as any)}
                   >
-                    Delete
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="proposed">Proposed</SelectItem>
+                      <SelectItem value="ongoing">Ongoing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Supervisor ID */}
+              <div className="space-y-2">
+                <Label htmlFor="supervisorId">Supervisor ID</Label>
+                <Input
+                  id="supervisorId"
+                  {...register('supervisorId')}
+                  placeholder="Leave empty to assign to yourself"
+                />
+                <p className="text-sm text-gray-500">
+                  Optional: Enter the supervisor's user ID. If left empty, you will be assigned as the supervisor.
+                </p>
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Start Date & End Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    {...register('startDate')}
+                    type="date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    {...register('endDate')}
+                    type="date"
+                  />
+                </div>
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Publication URL */}
+              <div className="space-y-2">
+                <Label htmlFor="publicationUrl">Publication URL</Label>
+                <Input
+                  id="publicationUrl"
+                  {...register('publicationUrl')}
+                  placeholder="https://example.com/research-paper.pdf"
+                  type="url"
+                />
+                {errors.publicationUrl && (
+                  <p className="text-sm text-red-600">{errors.publicationUrl.message}</p>
+                )}
+                <p className="text-sm text-gray-500">
+                  Link to published paper, preprint, or research repository
+                </p>
+              </div>
+
+              &nbsp;&nbsp;
+
+              {/* Submit Button */}
+              <div className="flex justify-center pt-4">
+                <Button type="submit" disabled={isLoading} className="px-8">
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Creating Research...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Create Research Project
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </fieldset>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
