@@ -7,14 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Axios } from "@/config/axios";
 import useAuthStore from "@/store/store";
 import {
-  BookOpen,
-  FileText,
-  Folder,
-  GraduationCap,
-  Lightbulb,
-  Users
+    BookOpen,
+    FileText,
+    Folder,
+    GraduationCap,
+    Lightbulb,
+    Users
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -46,6 +46,7 @@ interface Enrollment {
 const CoursePage = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const semesterCode = params.semesterCode as string;
   const courseCode = params.courseCode as string;
   const [course, setCourse] = useState<Course | null>(null);
@@ -53,13 +54,62 @@ const CoursePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
   const [activeTab, setActiveTab] = useState("people");
+  const [hasFetched, setHasFetched] = useState(false);
   const { isAuthenticated, accessToken } = useAuthStore();
 
   const semester = semesterCode?.replace('-', '/');
+  const storageKey = `course-tab-${semesterCode}-${courseCode}`;
+
+  // Handle tab from URL query parameter or localStorage
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+      // Store in localStorage for persistence
+      localStorage.setItem(storageKey, tabParam);
+      // Clean URL by removing query param immediately
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url);
+    } else if (!hasFetched) {
+      // Check localStorage for last active tab only on initial load
+      const savedTab = localStorage.getItem(storageKey);
+      if (savedTab) {
+        setActiveTab(savedTab);
+      }
+    }
+  }, [searchParams, storageKey, hasFetched]);
+
+  // Save tab changes to localStorage
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    localStorage.setItem(storageKey, value);
+  };
+
+  const fetchEnrollments = async (courseId: string) => {
+    try {
+      setIsLoadingEnrollments(true);
+      const response = await Axios.get(`/api/course/enrollments/${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.data.success) {
+        setEnrollments(response.data.data || []);
+      }
+    } catch (error: any) {
+      console.error("Error fetching enrollments:", error);
+      toast.error("Failed to load enrollment data");
+    } finally {
+      setIsLoadingEnrollments(false);
+    }
+  };
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
       if (!isAuthenticated || !accessToken || !semester || !courseCode) return;
+      if (hasFetched) return; // Prevent refetch
 
       try {
         setIsLoading(true);
@@ -78,6 +128,7 @@ const CoursePage = () => {
             setCourse(foundCourse);
             // Fetch enrollments after course is found
             fetchEnrollments(foundCourse.courseId);
+            setHasFetched(true); // Mark as fetched
           } else {
             toast.error("Course not found");
             router.push(`/semester/${semesterCode}`);
@@ -91,28 +142,8 @@ const CoursePage = () => {
       }
     };
 
-    const fetchEnrollments = async (courseId: string) => {
-      try {
-        setIsLoadingEnrollments(true);
-        const response = await Axios.get(`/api/course/enrollments/${courseId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        if (response.data.success) {
-          setEnrollments(response.data.data || []);
-        }
-      } catch (error: any) {
-        console.error("Error fetching enrollments:", error);
-        toast.error("Failed to load enrollment data");
-      } finally {
-        setIsLoadingEnrollments(false);
-      }
-    };
-
     fetchCourseDetails();
-  }, [semester, courseCode, isAuthenticated, accessToken]);
+  }, [semester, courseCode, isAuthenticated, accessToken, hasFetched]);
 
   // Calculate enrollment stats
   const instructors = enrollments.filter((e) => e.roleInCourse === "instructor");
@@ -205,7 +236,7 @@ const CoursePage = () => {
 
       {/* Main Content with Tabs */}
       <div className="flex-1 bg-gray-50 mt-5 dark:bg-gray-950">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Tabs Navigation - Sticky */}
           <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
