@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import useAuthStore from "@/store/store";
 import {
   Activity,
@@ -15,11 +14,8 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  FileText,
-  Flame,
   FolderKanban,
   GitBranch,
-  GraduationCap,
   Lightbulb,
   ListTodo,
   MessageSquare,
@@ -142,6 +138,19 @@ export default function DashboardClient() {
     return MOCK_DATA.admin;
   }, [user?.role]);
 
+  // Type guards
+  const isStudentData = (data: typeof mockData): data is typeof MOCK_DATA.student => {
+    return 'recentTasks' in data && 'recommendations' in data;
+  };
+
+  const isFacultyData = (data: typeof mockData): data is typeof MOCK_DATA.faculty => {
+    return 'recentActivity' in data && 'pendingTasks' in data;
+  };
+
+  const isAdminData = (data: typeof mockData): data is typeof MOCK_DATA.admin => {
+    return 'departmentMetrics' in data;
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <main className="flex-1 p-4 sm:p-6 md:p-8">
@@ -171,7 +180,7 @@ export default function DashboardClient() {
           </div>
 
           {/* Role-Specific Dashboard Content */}
-          {user?.role === 'student' && mockData && 'courses' in mockData && (
+          {user?.role === 'student' && isStudentData(mockData) && (
             <div className="space-y-6">
               {/* Student Stats Overview */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -328,7 +337,7 @@ export default function DashboardClient() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {mockData.recommendations.map((rec) => (
+                      {mockData.recommendations.map((rec: { id: number; type: string; title: string; company?: string; organizer?: string; professor?: string; match: number }) => (
                         <div key={rec.id} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
@@ -398,10 +407,10 @@ export default function DashboardClient() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {mockData.recentTasks.map((task) => (
+                    {mockData.recentTasks.map((task: { id: number; title: string; course: string; dueDate: string; priority: string }) => (
                       <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800">
                         <div className={`mt-1 w-2 h-2 rounded-full ${
-                          task.priority === 'high' ? 'bg-red-500' : 
+                          task.priority === 'high' ? 'bg-red-500' :
                           task.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
                         }`} />
                         <div className="flex-1">
@@ -426,7 +435,7 @@ export default function DashboardClient() {
             </div>
           )}
 
-          {user?.role === 'faculty' && mockData && 'courses' in mockData && (
+          {user?.role === 'faculty' && isFacultyData(mockData) && (
             <div className="space-y-6">
               {/* Faculty Stats Overview */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -550,7 +559,7 @@ export default function DashboardClient() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {mockData.recentActivity.map((activity) => (
+                    {mockData.recentActivity.map((activity: { id: number; action: string; course: string; time: string }) => (
                       <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
                         <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
                         <div className="flex-1">
@@ -586,7 +595,7 @@ export default function DashboardClient() {
                             </p>
                           </div>
                           <Badge className={
-                            project.status === 'On Track' ? 'bg-green-500' : 
+                            project.status === 'On Track' ? 'bg-green-500' :
                             project.status === 'Review Needed' ? 'bg-yellow-500' : 'bg-blue-500'
                           }>
                             {project.status}
@@ -612,7 +621,7 @@ export default function DashboardClient() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {mockData.pendingTasks.map((task) => (
+                    {mockData.pendingTasks.map((task: { id: number; type: string; count: number; course: string; priority: string }) => (
                       <div key={task.id} className="p-4 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800">
                         <div className="flex items-start justify-between mb-3">
                           <div>
@@ -637,7 +646,7 @@ export default function DashboardClient() {
             </div>
           )}
 
-          {user?.role === 'department_admin' && mockData && 'departmentMetrics' in mockData && (
+          {user?.role === 'department_admin' && isAdminData(mockData) && (
             <div className="space-y-6">
               {/* Admin Stats Overview */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
