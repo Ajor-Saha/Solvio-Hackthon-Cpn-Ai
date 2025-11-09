@@ -1,7 +1,5 @@
 # CPN-AI — Campus Projects & Proof Network
 
-Short project description
-
 CPN-AI (Campus Projects & Proof Network) is an AI-enhanced academic management platform that helps institutions manage semester-based courses, projects, research activities, and achievement verification. It combines Retrieval-Augmented Generation (RAG) for research and content assistance, a recommendation engine for opportunities, and cryptographic proofing for immutable verification of academic milestones and submissions.
 
 Key highlights
@@ -11,6 +9,82 @@ Key highlights
 - RAG-based AI assistant for research, content generation, and meeting summarization
 - Blockchain-verified proof records for submissions and milestones
 - Personalized recommendation engine for jobs, competitions, and higher-study opportunities
+
+## Tech Stack
+
+- **Frontend**
+
+  - Framework: Next.js 15 + React 19
+  - Language: TypeScript
+  - Styling: Tailwind CSS, shadcn/ui
+  - State: Zustand
+  - Forms & Validation: react-hook-form, zod
+  - Charts: Recharts
+  - Animations: Framer Motion
+
+- **Backend**
+
+  - Runtime & Framework: Node.js + Express (TypeScript)
+  - ORM: Drizzle ORM (drizzle-kit)
+  - Database: PostgreSQL (pg) — compatible with Neon/Serverless Postgres
+  - Auth: JWT-based authentication
+  - AI / Vector tooling: OpenAI, @langchain, @pinecone-database/pinecone, @google/genai
+  - File storage: AWS S3 SDK (or compatible R2/S3)
+
+## Quick Start Guide
+
+This guide gets the app running locally (client + server). The repository uses pnpm as the package manager (pnpm is recommended but npm/yarn can be used as alternatives).
+
+Prerequisites
+
+- Node.js (v18+ recommended)
+- pnpm (or npm/yarn)
+
+Install dependencies
+
+- Install client dependencies and start the frontend:
+
+```bash
+cd client
+pnpm install
+pnpm run dev
+```
+
+- Install server dependencies and start the backend:
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+**Environment Setup**
+
+Run these commands to create your .env files and update them as needed:
+
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
+
+Then, open each file and fill in the required values (e.g. DATABASE_URL, JWT_SECRET, API keys, and NEXT_PUBLIC_API_BASE_URL).
+
+**Database and migrations**
+
+- The backend uses Drizzle ORM. Useful commands (from `server`):
+
+```bash
+npm run db:generate   # generate drizzle migrations
+npm run db:migrate    # apply migrations
+npm run db:studio     # open drizzle studio
+npm run db:push       # push schema
+```
+
+Where to look next
+
+- Frontend: `client/src/` — Next.js app, components, hooks, and configuration.
+- Backend: `server/src/` — controllers, routes, middleware, and Drizzle schema.
+- API endpoints: see `resources/API_DOCUMENTATION.md` for documented endpoints, or inspect `server/src/routes/` and `server/src/controllers/`.
 
 ## Diagrams
 
@@ -48,70 +122,3 @@ Useful diagrams (in `resources/`):
 - `block-chain-data-flow-diagram.png` — verification & blockchain proof flow.
 - `quiz-gen-eval-diagram.png` — quiz generation and evaluation flow used by RAG/AI assistant.
 - `researchandproject-chatbot-diagram.png` — architecture of the research/project chatbot assistant.
-
-Refer to `server/src/data/docs/ER_DIAGRAM.md` for a detailed mermaid ER diagram and schema overview used by the backend.
-
-## Quick Start Guide
-
-This guide gets the app running locally (client + server). The repository uses pnpm as the package manager (pnpm is recommended but npm/yarn can be used as alternatives).
-
-Prerequisites
-
-- Node.js (v18+ recommended)
-- pnpm (or npm/yarn)
-
-Install dependencies
-
-- Install root tools (optional):
-
-```bash
-# from repository root
-pnpm install
-```
-
-- Install client dependencies and start the frontend:
-
-```bash
-cd client
-pnpm install
-pnpm dev
-```
-
-The client runs using Next.js (script `dev` -> `next dev --turbopack`).
-
-- Install server dependencies and start the backend:
-
-```bash
-cd server
-pnpm install
-pnpm dev
-```
-
-The server dev script uses `node --import=tsx --watch src/index.ts` (see `server/package.json`). To run a production-like server use `pnpm start` in `server`.
-
-Environment
-
-- Create a `.env` file in the `server/` and `client/` folders as needed. See `server/src/config/env.ts` and `client/src/config/env.ts` for expected variables. Typical variables include database URL, JWT secret, 3rd-party API keys (OpenAI, Pinecone/Pinecone keys, S3 credentials), and frontend NEXT*PUBLIC*\* variables for API base URL.
-
-Database and migrations
-
-- The backend uses Drizzle ORM. Useful commands (from `server`):
-
-```bash
-pnpm run db:generate   # generate drizzle migrations
-pnpm run db:migrate    # apply migrations
-pnpm run db:studio     # open drizzle studio
-pnpm run db:push       # push schema
-```
-
-Where to look next
-
-- Frontend: `client/src/` — Next.js app, components, hooks, and configuration.
-- Backend: `server/src/` — controllers, routes, middleware, and Drizzle schema.
-- API endpoints: see `resources/API_DOCUMENTATION.md` for documented endpoints, or inspect `server/src/routes/` and `server/src/controllers/`.
-
-Getting help
-
-If you encounter issues during development, check our troubleshooting docs (if available) or open an issue describing the problem, OS, Node version, and steps to reproduce.
-
----
